@@ -69,7 +69,9 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		pcbList.add(pcb);
 	}
 	
-	
+	public static Clock getClock() {
+		return clock;
+	}
 	
 	public static Vector<PCB> getPcbList() {
 		return pcbList;
@@ -107,94 +109,94 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	}
 
 	//只有在入就绪队列和阻塞队列时才会有进程态的转变、加入就绪队列时间、就绪队列编号变化，而其他的则是队列编号的变化
-	public static void addReadyQ(Process p) {  //进程加入就绪队列
+	public synchronized static void addReadyQ(Process p) {  //进程加入就绪队列
 		p.getPcb().setRqNum(ReadyQ.size());  //设置就绪队列中的编号
 		p.getPcb().addRqTimes(clock.getTime());  //加入就绪队列时间
 		p.getPcb().setPsw(1);  //调整为就绪态
 		ReadyQ.add(p);
 	}
-	public static void addBlockQ1(Process p) {  //进程加入阻塞队列1
+	public synchronized static void addBlockQ1(Process p) {  //进程加入阻塞队列1
 		p.getPcb().setBqNum1(BlockQ1.size());
 		p.getPcb().addBqTimes1(clock.getTime());
 		p.getPcb().setPsw(2);  //调整为阻塞态
 		BlockQ1.add(p);
 	}
-	public static void addBlockQ2(Process p) {  //进程加入阻塞队列2
+	public synchronized static void addBlockQ2(Process p) {  //进程加入阻塞队列2
 		p.getPcb().setBqNum2(BlockQ2.size());
 		p.getPcb().addBqTimes2(clock.getTime());
 		p.getPcb().setPsw(2);  //调整为阻塞态
 		BlockQ2.add(p);
 	}
-	public static void addBlockQ3(Process p) {  //进程加入阻塞队列3
+	public synchronized static void addBlockQ3(Process p) {  //进程加入阻塞队列3
 		p.getPcb().setBqNum3(BlockQ3.size());
 		p.getPcb().addBqTimes3(clock.getTime());
 		p.getPcb().setPsw(2);  //调整为阻塞态
 		BlockQ3.add(p);
 	}
-	public static void addBlockQ4(Process p) {  //进程加入阻塞队列3
+	public synchronized static void addBlockQ4(Process p) {  //进程加入阻塞队列3
 		p.getPcb().setBqNum4(BlockQ4.size());
 		p.getPcb().addBqTimes4(clock.getTime());
 		p.getPcb().setPsw(2);  //调整为阻塞态
 		BlockQ4.add(p);
 	}
-	public static void addBlockQ5(Process p) {  //进程加入阻塞队列3
+	public synchronized static void addBlockQ5(Process p) {  //进程加入阻塞队列3
 		p.getPcb().setBqNum5(BlockQ5.size());
 		p.getPcb().addBqTimes5(clock.getTime());
 		p.getPcb().setPsw(2);  //调整为阻塞态
 		BlockQ5.add(p);
 	}
-	public static Process popReadyQ() {  //就绪队头出队
+	public synchronized static Process popReadyQ() {  //就绪队头出队
 		Process p = ReadyQ.remove(0);
 		for(int i=0;i<ReadyQ.size();i++) {  //更新队中编号信息
 			ReadyQ.get(i).getPcb().setRqNum(i);
 		}
 		return p;
 	}
-	public static Process popBlockQ1() {  //阻塞队头出队
+	public synchronized static Process popBlockQ1() {  //阻塞队头出队
 		Process p = BlockQ1.remove(0);
 		for(int i=0;i<BlockQ1.size();i++) {  //更新队中编号信息
 			BlockQ1.get(i).getPcb().setBqNum1(i);
 		}
 		return p;
 	}
-	public static Process popBlockQ2() {  //阻塞队头出队
+	public synchronized static Process popBlockQ2() {  //阻塞队头出队
 		Process p = BlockQ2.remove(0);
 		for(int i=0;i<BlockQ2.size();i++) {  //更新队中编号信息
 			BlockQ2.get(i).getPcb().setBqNum2(i);
 		}
 		return p;
 	}
-	public static Process popBlockQ3() {  //阻塞队头出队
+	public synchronized static Process popBlockQ3() {  //阻塞队头出队
 		Process p = BlockQ3.remove(0);
 		for(int i=0;i<BlockQ3.size();i++) {  //更新队中编号信息
 			BlockQ3.get(i).getPcb().setBqNum3(i);
 		}
 		return p;
 	}
-	public static Process popBlockQ4() {  //阻塞队头出队
+	public synchronized static Process popBlockQ4() {  //阻塞队头出队
 		Process p = BlockQ4.remove(0);
 		for(int i=0;i<BlockQ4.size();i++) {  //更新队中编号信息
 			BlockQ4.get(i).getPcb().setBqNum4(i);
 		}
 		return p;
 	}
-	public static Process popBlockQ5() {  //阻塞队头出队
+	public synchronized static Process popBlockQ5() {  //阻塞队头出队
 		Process p = BlockQ5.remove(0);
 		for(int i=0;i<BlockQ5.size();i++) {  //更新队中编号信息
 			BlockQ5.get(i).getPcb().setBqNum5(i);
 		}
 		return p;
 	}
-	public static void cpuStateProtection() {   //cpu寄存器现场保护
+	public synchronized static void cpuStateProtection() {   //cpu寄存器现场保护
 		runningProcess.getPcb().setPc(CPU.getPc());
 		runningProcess.getPcb().setInstruc(CPU.getIr());
 	}
-	public static void cpuStateRecovery() {   //cpu现场恢复
+	public synchronized static void cpuStateRecovery() {   //cpu现场恢复
 		CPU.setPc(runningProcess.getPcb().getPc());
 		CPU.setIr(runningProcess.getPcb().getInstruc());
 	}
 	//进程控制原语
-	public static Process createProcess(Job j) {  //根据作业创建进程原语放入就绪队列当中
+	public synchronized static Process createProcess(Job j) {  //根据作业创建进程原语放入就绪队列当中
 		System.out.println(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
 		//IOFile.writeMessageInData(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
 		//ProcessUI.addMessage(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
@@ -216,7 +218,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		//ProcessUI.addProcessMessage(clock.getTime()+"s进程"+p.getPcb().getPro_ID()+"进入，优先级为："+p.getPcb().getPriority()+"指令数量为："+p.getPcb().getInstrucNum());
 		return p;
 	}
-	public static void cancelProcess(Process p) {  //撤销完成的进程
+	public synchronized static void cancelProcess(Process p) {  //撤销完成的进程
 		p.getPcb().setEndTimes(clock.getTime());
 		p.getPcb().setTurnTimes(p.getPcb().getEndTimes()-p.getPcb().getInTimes());
 		p.getPcb().setPsw(-1);
@@ -226,13 +228,15 @@ public class ProcessSchedule extends Thread{  //进程调度类
 				pcbList.remove(i);
 			}
 		}
+		//释放掉进程所占用的内存
+		MMU.recyclePageFrame(p.getPcb());
 		FinishedQ.add(p);
 		System.out.println(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
 		//IOFile.writeMessageInData(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
 		//ProcessUI.addMessage(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
 		//ProcessUI.addProcessMessage(clock.getTime()+"s进程"+p.getPcb().getPro_ID()+"执行完毕"+"，耗时："+p.getPcb().getTurnTimes());
 	}
-	public static void blockProcess(Process p) {  //阻塞进程
+	public synchronized static void blockProcess(Process p) {  //阻塞进程
 		//如果缺页，调入阻塞队列3中
 		if(p.isLackPage()) {
 			addBlockQ3(p);
@@ -274,7 +278,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		runningProcess.setTime_slice(0);  //使其时间片变清零
 		
 	}
-	public static void awakeProcess(int BlockQNum,int now_time) {  //唤醒进程，参数为阻塞队列序号，唤醒阻塞队列队头进程
+	public synchronized static void awakeProcess(int BlockQNum,int now_time) {  //唤醒进程，参数为阻塞队列序号，唤醒阻塞队列队头进程
 		switch(BlockQNum) {
 			case 2:
 				Process p1 = popBlockQ1();   //出阻塞队列，入就绪队列
@@ -326,7 +330,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	}
 	
 	//对就绪队列中的进程按优先级数进行从小到大的排序
-	public void sortReadyQ() {
+	public synchronized void sortReadyQ() {
 		int min_priority,min_index;
 		for(int i=0;i<ReadyQ.size()-1;i++) {
 			min_priority=99; min_index=i;
@@ -343,7 +347,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	}
 	
 	//高级调度，从外存中的后备队列中创建进程到内存中的就绪队列
-	public void highSchedule() {
+	public synchronized void highSchedule() {
 		//如果后备队列中没有作业，或者当前在内存中的PCB的数量已经大于最大并发进程数，就不进行高级调度
 		if(ReverseQ.size()<=0 || pcbList.size()>=MAX_PROCESS_NUM) {
 			return;
@@ -365,7 +369,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	}
 	
 	//低级调度，内存与cpu之间的调度
-	public void lowSchedule() {
+	public synchronized void lowSchedule() {
 		//如果就绪队列为空或者，有正在执行的程序那么直接结束低级调度
 		if(ReadyQ.size()==0 || runningProcess!=null) {
 			return;
@@ -397,6 +401,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 			highSchedule();
 			lowSchedule();
 			
+			CPU.setPsw(1);
 			
 			if(runningProcess!=null) {
 				

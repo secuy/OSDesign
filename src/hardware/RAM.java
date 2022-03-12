@@ -3,27 +3,28 @@ package hardware;
 public class RAM {
 	
 	//定义页框（物理块）数量常量
-	static final int PAGE_NUM = 32;
+	public static final int PAGE_NUM = 32;
 	
 	//定义页框（物理块）大小常量
 	static final int PAGE_SIZE = 1024;
 	
 	//页表存放开始的块位置
-	static final int PAGE_LIST_START_NO = 0;
+	public static final int PAGE_LIST_START_NO = 0;
 	//页表占用块数
-	static final int PAGE_LIST_NUM = 1;
+	public static final int PAGE_LIST_NUM = 1;
 	
 	//用户区存放开始的块位置
-	static final int USER_AREA_START_NO = 1;
+	public static final int USER_AREA_START_NO = 1;
 	//用户区占用的块数
-	static final int USER_AREA_NUM = 24;
+	public static final int USER_AREA_NUM = 24;
 	
 	
 	//存放的数据单元
 	private static byte[] data_unit;
 	
-	//内存用户区物理块分配情况，对应块号（1-24）
-	public static boolean[] user_distrib;
+	//内存中物理块所有的占用情况
+	public static boolean[] all_blocks;
+	
 	
 	
 	
@@ -34,17 +35,18 @@ public class RAM {
 			//全部初始化为FF
 			data_unit[k] = -1;
 		}
-		//用户区物理块分配情况初始化
-		user_distrib = new boolean[USER_AREA_NUM];
-		for(int i=0;i<USER_AREA_NUM;i++) {
-			user_distrib[i] = false;
+		//所有块的初始化
+		all_blocks = new boolean[PAGE_NUM];
+		for(int j=0;j<PAGE_NUM;j++) {
+			all_blocks[j] = false;
 		}
+		
 	}
 	
 	
 	//获取用户物理块分配情况表
-	public static boolean[] getUser_distrib() {
-		return user_distrib;
+	public static boolean[] getAllBlocks() {
+		return all_blocks;
 	}
 
 

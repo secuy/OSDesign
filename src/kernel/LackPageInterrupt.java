@@ -16,30 +16,35 @@ public class LackPageInterrupt extends Thread {
 	}
 	
 	//检查是否缺页,返回值为false则为并不缺页，反之缺页
-	public static boolean checkLackPage(Process p) {
+	public synchronized static boolean checkLackPage(Process p) {
 		//得到当前进程执行的指令
-		int logicAddr = p.getPcb().getInstruc().getL_Address();
-		PageFrameLRU[] pfl = p.getPcb().getPage_frame_nums();
-		int i;
-		for(i=0;i<ProcessSchedule.needPageNum;i++) {
-			if(logicAddr == pfl[i].getLogic_no()) {
-				pfl[i].addInMemTimes();
-				p.setLackPage(false);
-				System.out.println("页表命中，逻辑页号为："+pfl[i].getLogic_no()+"页框号为："+pfl[i].getPage_frame_no()+"使用次数："+pfl[i].getInMemTimes());
-				return false;
+		//正在运行的指令不进行缺页检查
+		if(p.getPcb().getInstruc().getFinishRunTimes()==0) {
+			int logicAddr = p.getPcb().getInstruc().getL_Address();
+			PageFrameLRU[] pfl = p.getPcb().getPage_frame_nums();
+			int i;
+			for(i=0;i<ProcessSchedule.needPageNum;i++) {
+				if(logicAddr == pfl[i].getLogic_no()) {
+					pfl[i].addInMemTimes();
+					p.getPcb().getPage_items()[logicAddr].addInMemTimes();
+					p.setLackPage(false);
+					System.out.println("页表命中，逻辑页号为："+pfl[i].getLogic_no()+"页框号为："+pfl[i].getPage_frame_no()+"使用次数："+pfl[i].getInMemTimes());
+					return false;
+				}
 			}
+			//说明页表没有命中，那么就需要从磁盘读入相应的文件，因此加入到阻塞队列3
+			if(i>=ProcessSchedule.needPageNum) {
+				p.setLackPage(true);
+				InterruptOperator.inInterrupt();
+			}
+			return true;
 		}
-		//说明页表没有命中，那么就需要从磁盘读入相应的文件，因此加入到阻塞队列3
-		if(i>=ProcessSchedule.needPageNum) {
-			p.setLackPage(true);
-			InterruptOperator.inInterrupt();
-		}
-		return true;
+		return false;
 	}
 
 	
 	//实现LRU算法
-	public void LRU(Process p) {
+	public synchronized void LRU(Process p) {
 		PageFrameLRU[] page_frames = p.getPcb().getPage_frame_nums();
 		int logicAddr = p.getPcb().getInstruc().getL_Address();
 		int minVal=page_frames[0].getInMemTimes(),minIndex=0;
@@ -54,25 +59,36 @@ public class LackPageInterrupt extends Thread {
 		int tempTimes = page_frames[minIndex].getInMemTimes();
 		
 		
+		
 		//换入页表项
 		page_frames[minIndex].setLogic_no(logicAddr);
 		page_frames[minIndex].setInMemTimes(p.getPcb().getPage_items()[logicAddr].getInMemTimes());
+		
+		//更改页表内容
+		p.getPcb().getPage_items()[logicAddr].setPageFrameNo(page_frames[minIndex].getPage_frame_no());
 
 		//换出页表
 		if(tempLogic != -1) {
+			//更改页表内容
 			p.getPcb().getPage_items()[tempLogic].setInMemTimes(tempTimes);
+			
+			p.getPcb().getPage_items()[tempLogic].setPageFrameNo(-1);
 		}
+		
 	}
 	
 	//处理缺页中断，调入内存
-	public void readPageFromDisk() {
+	public synchronized void readPageFromDisk() {
 		if(ProcessSchedule.getBlockQ3().size()>0) {
 			Process p = ProcessSchedule.getBlockQ3().get(0);
 			if(p.isLackPage()) {
 				System.out.println("从磁盘调入内存");
 				
-				//要把逻辑地址和页框号统一起来
-				LRU(p);
+				if(!p.isFinishLRUTag()) {
+					//要把逻辑地址和页框号统一起来
+					LRU(p);
+					p.setFinishLRUTag(true);
+				}
 				//不再缺页
 				//p.setLackPage(false);
 			}

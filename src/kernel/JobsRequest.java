@@ -49,7 +49,7 @@ public class JobsRequest extends Thread {  //作业请求类
 	/**
 	 * 将创建的Job加入队列，并根据Job进入时间进行排序
 	 */
-	public void addJob(Job j) {
+	public synchronized void addJob(Job j) {
 		int i=0;
 		//找到加入的job位置
 		for( ;i<JobsQueue.size() && j.getInTimes() >= JobsQueue.get(i).getInTimes();i++);

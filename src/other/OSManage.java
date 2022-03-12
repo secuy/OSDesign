@@ -27,12 +27,6 @@ public class OSManage {
 		lpi = new LackPageInterrupt();
 		
 		
-		jr.start();
-		ps.start();
-		ii.start();
-		dri.start();
-		lpi.start();
-		
 	}
 	
 	public JobsRequest getJobsRequest() {
@@ -42,8 +36,13 @@ public class OSManage {
 	public ProcessSchedule getProcessSchedule() {
 		return ps;
 	}
-
-	public static void main(String[] args) {
-		OSManage o = new OSManage();
+	
+	public void runSystem() {
+		jr.start();
+		ps.start();
+		ii.start();
+		dri.start();
+		lpi.start();
 	}
+
 }

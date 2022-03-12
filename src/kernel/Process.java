@@ -8,19 +8,24 @@ public class Process {
 	List<Instruction> instructions;   //进程中包含的指令
 	private int time_slice;   //剩余时间片时间数
 	
-	private boolean isLackPage;   //是否缺页标志
+	private boolean isLackPage;   //是否缺页标志,中断结束后
+	
+	private boolean finishLRUTag;   //是否完成LRU算法
 	
 	public Process() {
 		pcb = null;
 		instructions = new ArrayList<Instruction>();
 		time_slice = -1;
 		isLackPage = false;
+		finishLRUTag = false;
+		
 	}
 	public Process(PCB pcb,int time_slice) {
 		this.pcb = pcb;
 		this.time_slice = time_slice;
 		instructions = new ArrayList<Instruction>();
 		isLackPage = false;
+		finishLRUTag = false;
 	}
 	public Process(Job j) {  //使用Job构造Process
 		PCB pcb = new PCB();   //PCB属性设置
@@ -31,6 +36,7 @@ public class Process {
 		ProcessSchedule.addPcb(pcb);
 		
 		isLackPage = false;
+		finishLRUTag = false;
 		this.time_slice = 2;
 		instructions = new ArrayList<Instruction>(j.getList());
 	}
@@ -59,5 +65,10 @@ public class Process {
 		this.isLackPage = isLackPage;
 	}
 	
-	
+	public boolean isFinishLRUTag() {
+		return finishLRUTag;
+	}
+	public void setFinishLRUTag(boolean finishLRUTag) {
+		this.finishLRUTag = finishLRUTag;
+	}
 }

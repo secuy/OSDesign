@@ -6,13 +6,16 @@ public class Instruction {  //指令类
 	private int instruc_state;   //指令类型标志
 	private int L_Address;   //用户程序指令访问的逻辑地址
 	private int inRunTimes;   //每条指令运行的时间
-	private int finishRunTimes;  //该条指令执行
+	private int finishRunTimes;  //该条指令执行的时间
 	private boolean isFinished;   //是否执行完成
+	
+	
 	
 	public Instruction() {  //初始化，还未表示指令
 		instruc_ID = 0;
 		instruc_state = -1;
 		isFinished = false;
+		
 	}
 	public Instruction(int instrucID, int instrucState, int L_Address, int inRunTimes) {
 		instruc_ID = instrucID;

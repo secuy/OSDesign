@@ -58,7 +58,7 @@ public class InterruptOperator {   //中断处理
 	public static Instruction getScreen() {
 		return screen_interrupt;
 	}
-	public static void inInterrupt() {  //送入中断处理
+	public synchronized static void inInterrupt() {  //送入中断处理
 		if(CPU.getIr().getInstruc_state()==0 || CPU.getIr().getInstruc_state()==1) {
 			if(!ProcessSchedule.getRunningProcess().isLackPage()) {
 				return;
@@ -127,7 +127,7 @@ public class InterruptOperator {   //中断处理
 		CPU.setIr(null);
 		CPU.setIs_busy(false);
 	}
-	public static void checkIOInterrupt() {  //检查输入输出中断是否完成，并且将后续阻塞队列进行中断处理
+	public synchronized static void checkIOInterrupt() {  //检查输入输出中断是否完成，并且将后续阻塞队列进行中断处理
 		if(ProcessSchedule.getBlockQ1().size()>0) {
 			int time = IOInterrupt.getClock().getTime();
 			if(time - keyboard_time>=2) {
@@ -210,7 +210,7 @@ public class InterruptOperator {   //中断处理
 		}
 	}
 	
-	public static void checkDiskRWInterrupt() {  //检查磁盘文件读写中断是否完成，并且将后续阻塞队列进行中断处理
+	public synchronized static void checkDiskRWInterrupt() {  //检查磁盘文件读写中断是否完成，并且将后续阻塞队列进行中断处理
 		if(ProcessSchedule.getBlockQ3().size()>0) {
 			int time = DiskRWInterrupt.getClock().getTime();
 			if(time-readDisk_time>=3) {
@@ -219,6 +219,7 @@ public class InterruptOperator {   //中断处理
 				} else {
 					//不再缺页
 					ProcessSchedule.getBlockQ3().get(0).setLackPage(false);
+					ProcessSchedule.getBlockQ3().get(0).setFinishLRUTag(false);
 				}
 				ProcessSchedule.getBlockQ3().get(0).getPcb().setInterrupt_instruc(null);  //设置阻塞指令为空
 				readDisk_interrupt = null;

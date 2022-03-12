@@ -2,6 +2,7 @@ package hardware;
 
 import kernel.Instruction;
 import kernel.Process;
+import kernel.ProcessSchedule;
 import ui.ProcessUI;
 
 public class CPU {
@@ -66,19 +67,20 @@ public class CPU {
 		psw = KERNEL_STATE;
 	}
 	
-	public static void excute() {  //执行当前CPU指令
+	public synchronized static void excute() {  //执行当前CPU指令
 		//增加当前指令运行时间
 		ir.addFinishRunTimes();
 		//指令执行完成后设置完成标志
 		if(ir.getFinishRunTimes()>=ir.getInRunTimes()) {
 			ir.setFinished(true);  //该指令执行完毕
 		}
+		
 		System.out.println("本次执行指令："+ir.toString());
 		/*if(ir.getInstruc_state()==0) {  //0状态指令直接执行完毕，其他类型指令必须在中断结束后才算结束
 			ir.setFinished(true);  //该指令执行完毕
 		}*/
 	}
-	public static void nextInstruction(Process p) {   //切换同一进程中下一条指令
+	public synchronized static void nextInstruction(Process p) {   //切换同一进程中下一条指令
 		//如果指令不完成则不切下一条指令
 		if(ir!=null && !ir.isFinished()) {
 			return;
