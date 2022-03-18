@@ -1,5 +1,6 @@
 package kernel;
 
+import other.OSManage;
 import hardware.Clock;
 
 /**
@@ -11,20 +12,25 @@ import hardware.Clock;
 public class DiskRWInterrupt extends Thread{
 	private static Clock clock;
 	
-	public DiskRWInterrupt() {
+	OSManage om;
+	
+	public DiskRWInterrupt(OSManage om) {
 		clock = new Clock();
+		
+		this.om = om;
 	}
 	public static Clock getClock() {
 		return clock;
 	}
 	
 	public void run() {
-		while(true) {
-			
-			//检查中断,并处理完成的中断
-			InterruptOperator.checkDiskRWInterrupt();
-			
-			clock.passOneSec();
+		while(!om.isShutdown()) {
+			if(!om.isPause()) {
+				//检查中断,并处理完成的中断
+				InterruptOperator.checkDiskRWInterrupt();
+				
+				clock.passOneSec();
+			}
 			
 		}
 	}

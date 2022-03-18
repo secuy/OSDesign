@@ -30,12 +30,17 @@ public class PageItem {
 	//被调入内存的次数(用来实现LRU算法，最近最少使用算法)
 	private int inMemTimes;
 
+	//上次被调入内存的时间
+	private int lastInMemTime;
+	
+	
 	public PageItem() {
 		this.logicPageNo = -1;
 		this.pageFrameNo = -1;
 		this.diskBlockNo = -1;
 		this.isInMemory = false;
 		this.inMemTimes = 0;
+		this.lastInMemTime = -1;
 	}
 	
 	public PageItem(int logicPageNo, int pageFrameNo, int diskBlockNo, boolean isInMemory) {
@@ -44,6 +49,7 @@ public class PageItem {
 		this.diskBlockNo = diskBlockNo;
 		this.isInMemory = isInMemory;
 		this.inMemTimes = 0;
+		this.lastInMemTime = -1;
 	}
 
 
@@ -89,6 +95,14 @@ public class PageItem {
 	
 	public void addInMemTimes() {
 		this.inMemTimes++;
+	}
+
+	public int getLastInMemTime() {
+		return lastInMemTime;
+	}
+
+	public void setLastInMemTime(int lastInMemTime) {
+		this.lastInMemTime = lastInMemTime;
 	}
 	
 }

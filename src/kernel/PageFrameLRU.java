@@ -16,10 +16,14 @@ public class PageFrameLRU {
 	//调入内存次数
 	private int inMemTimes;
 	
+	//上次被调入内存的时间
+	private int lastInMemTime;
+	
 	public PageFrameLRU() {
 		this.page_frame_no = -1;
 		this.logic_no = -1;
 		this.inMemTimes = 0;
+		this.lastInMemTime = -1;
 	}
 
 	public int getPage_frame_no() {
@@ -49,4 +53,14 @@ public class PageFrameLRU {
 	public void addInMemTimes() {
 		this.inMemTimes++;
 	}
+
+	public int getLastInMemTime() {
+		return lastInMemTime;
+	}
+
+	public void setLastInMemTime(int lastInMemTime) {
+		this.lastInMemTime = lastInMemTime;
+	}
+	
+	
 }

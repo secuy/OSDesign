@@ -1,5 +1,6 @@
 package kernel;
 
+
 import java.util.*;
 
 
@@ -12,12 +13,15 @@ public class Process {
 	
 	private boolean finishLRUTag;   //是否完成LRU算法
 	
+	private int bufferNo;   //在内存中的缓冲区块号
+	
 	public Process() {
 		pcb = null;
 		instructions = new ArrayList<Instruction>();
 		time_slice = -1;
 		isLackPage = false;
 		finishLRUTag = false;
+		bufferNo = -1;
 		
 	}
 	public Process(PCB pcb,int time_slice) {
@@ -26,6 +30,7 @@ public class Process {
 		instructions = new ArrayList<Instruction>();
 		isLackPage = false;
 		finishLRUTag = false;
+		bufferNo = -1;
 	}
 	public Process(Job j) {  //使用Job构造Process
 		PCB pcb = new PCB();   //PCB属性设置
@@ -39,6 +44,7 @@ public class Process {
 		finishLRUTag = false;
 		this.time_slice = 2;
 		instructions = new ArrayList<Instruction>(j.getList());
+		bufferNo = -1;
 	}
 	public PCB getPcb() {
 		return pcb;
@@ -71,4 +77,11 @@ public class Process {
 	public void setFinishLRUTag(boolean finishLRUTag) {
 		this.finishLRUTag = finishLRUTag;
 	}
+	public int getBufferNo() {
+		return bufferNo;
+	}
+	public void setBufferNo(int bufferNo) {
+		this.bufferNo = bufferNo;
+	}
+	
 }

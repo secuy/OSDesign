@@ -67,7 +67,7 @@ public class InterruptOperator {   //中断处理
 		ProcessSchedule.getRunningProcess().getPcb().setInterrupt_instruc(CPU.getIr());
 		ProcessSchedule.getRunningProcess().setTime_slice(0);   //设置中断进程时间片变为0
 		ProcessSchedule.cpuStateProtection();  //cpu现场保护
-		CPU.setPsw(0);  //设置中断处理时CPU为内核态
+		CPU.switchToKernelState();  //设置中断处理时CPU为内核态
 		
 		//缺页的时候加入阻塞队列3
 		if(ProcessSchedule.getRunningProcess().isLackPage()) {
@@ -79,6 +79,7 @@ public class InterruptOperator {   //中断处理
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
 			
 			ProcessSchedule.setRunningProcess(null);  //执行进程设为空
+			//CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
 			CPU.setIr(null);
 			CPU.setIs_busy(false);
 			return;
@@ -124,6 +125,7 @@ public class InterruptOperator {   //中断处理
 		}
 		
 		ProcessSchedule.setRunningProcess(null);  //执行进程设为空
+		//CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
 		CPU.setIr(null);
 		CPU.setIs_busy(false);
 	}

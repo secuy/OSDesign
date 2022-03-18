@@ -3,10 +3,10 @@ package kernel;
 import hardware.CPU;
 import hardware.Clock;
 import hardware.MMU;
+import hardware.RAM;
 
 import java.util.*;
 
-import other.IOFile;
 import other.OSManage;
 
 import ui.ProcessUI;
@@ -15,6 +15,10 @@ import ui.ProcessUI;
 
 
 public class ProcessSchedule extends Thread{  //进程调度类
+	
+	static OSManage om;
+	
+	
 	private static Clock clock;   	//时钟
 	private static Process runningProcess = null;    //正在执行的进程
 	
@@ -55,8 +59,9 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	
 	private static Vector<PCB> pcbList = new Vector<PCB>();   //正在内存中的PCB表
 	
-	public ProcessSchedule() {
+	public ProcessSchedule(OSManage o) {
 		clock = new Clock();
+		om = o;
 	}
 	
 	public static Process getRunningProcess() {
@@ -202,15 +207,22 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		//ProcessUI.addMessage(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
 		
 		Process p = new Process(j);
+		
+		
 		p.setTime_slice(TIME_SLICE);   //设置创建进程时间片为规定时间片的时间
 		p.getPcb().setInstruc(null);  //当前执行指令为编号1指令
 		p.getPcb().setPc(1);  //下一条指令编号为2
 		
+		
 		//分配内存页框
-		MMU.givePageFrame(p.getPcb());
+		MMU.givePageFrame(p);
+		
+		//逻辑地址到磁盘交换区的映射
+		MMU.giveDiskAddr(p);
 		
 		Random r = new Random();
 		p.getPcb().setPriority(r.nextInt(5)+1);   //生成随机数作为进程中的优先级数
+		
 		
 		//将该进程放入到就绪队列当中
 		addReadyQ(p);
@@ -229,7 +241,17 @@ public class ProcessSchedule extends Thread{  //进程调度类
 			}
 		}
 		//释放掉进程所占用的内存
-		MMU.recyclePageFrame(p.getPcb());
+		MMU.recyclePageFrame(p);
+		
+		//缓冲区数据
+		if(p.getBufferNo()!=-1) {
+			om.getBufferManager().getC().takeData(p);
+		}
+		
+		
+		//回收进程磁盘交换区的空间
+		MMU.recycleDiskAddr(p);
+		
 		FinishedQ.add(p);
 		System.out.println(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
 		//IOFile.writeMessageInData(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
@@ -241,6 +263,9 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		if(p.isLackPage()) {
 			addBlockQ3(p);
 			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
+			
+			om.getBufferManager().getP().appendData(p);
+			
 			return;
 		}
 		
@@ -259,12 +284,18 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==4) {
 			addBlockQ3(p);
+			
+			om.getBufferManager().getP().appendData(p);
+			
 			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
 			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
 			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==5) {
 			addBlockQ4(p);
+			
+			om.getBufferManager().getP().appendData(p);
+			
 			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
 			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
 			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
@@ -303,6 +334,9 @@ public class ProcessSchedule extends Thread{  //进程调度类
 				p3.getPcb().setPsw(1);
 				p3.setTime_slice(2);
 				addReadyQ(p3);
+				
+				om.getBufferManager().getC().takeData(p3);
+				
 				System.out.println(now_time+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
 				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
 				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
@@ -312,6 +346,9 @@ public class ProcessSchedule extends Thread{  //进程调度类
 				p4.getPcb().setPsw(1);
 				p4.setTime_slice(2);
 				addReadyQ(p4);
+				
+				om.getBufferManager().getC().takeData(p4);
+				
 				System.out.println(now_time+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
 				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
 				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
@@ -396,64 +433,67 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	
 	public void run() {
 		
-		while(true) {
+		while(!om.isShutdown()) {
 			
-			highSchedule();
-			lowSchedule();
-			
-			CPU.setPsw(1);
-			
-			if(runningProcess!=null) {
+			if(!om.isPause()) {
+				highSchedule();
+				lowSchedule();
 				
 				
-				//切换下一条指令
-				CPU.nextInstruction(runningProcess);
+				if(runningProcess!=null) {
+					
+					
+					//切换下一条指令
+					CPU.nextInstruction(runningProcess);
+					
+					//缺页中断检查
+					if(LackPageInterrupt.checkLackPage(runningProcess)) {
+						//缺页则直接跳过下面步骤
+						continue;
+					}
+					
+					//CPU执行指令
+					CPU.excute(clock.getTime());
+					
+					//检查是否需要中断
+					InterruptOperator.inInterrupt();
+				}
 				
-				//缺页中断检查
-				if(LackPageInterrupt.checkLackPage(runningProcess)) {
-					//缺页则直接跳过下面步骤
+				//时钟经过一秒
+				clock.passOneSec();
+				
+				
+				//如果该指令没有完成，那么不能进行进程调度，需要直接继续完成
+				if(runningProcess!=null && !runningProcess.getPcb().getInstruc().isFinished()) {
 					continue;
 				}
 				
-				//CPU执行指令
-				CPU.excute();
-				
-				//检查是否需要中断
-				InterruptOperator.inInterrupt();
-			}
-			
-			//时钟经过一秒
-			clock.passOneSec();
-			
-			
-			//如果该指令没有完成，那么不能进行进程调度，需要直接继续完成
-			if(runningProcess!=null && !runningProcess.getPcb().getInstruc().isFinished()) {
-				continue;
-			}
-			
-			//如果执行到了最后一条指令
-			if(runningProcess!=null && runningProcess.getPcb().getPc()>runningProcess.getPcb().getInstrucNum()) {
-				cancelProcess(runningProcess);
-				runningProcess = null;
-				continue;
-			}
-			
-			if(runningProcess!=null) {
-				//时间片没有用完
-				if(runningProcess.getTime_slice()>1) {
-					runningProcess.setTime_slice(runningProcess.getTime_slice()-1);
-				} else {
-					//时间片用完
-					cpuStateProtection();  //cpu现场保护
-					runningProcess.setTime_slice(2);  //恢复时间片的时长
-					if(ReadyQ.size()==0) {  //若就绪队列为空，则继续执行当前进程
-						continue;
-					}
-					runningProcess.getPcb().setPsw(READY_STATE);
-					addReadyQ(runningProcess);   //将当前进程加入就绪队列
+				//如果执行到了最后一条指令
+				if(runningProcess!=null && runningProcess.getPcb().getPc()>runningProcess.getPcb().getInstrucNum()) {
+					cancelProcess(runningProcess);
 					runningProcess = null;
+					continue;
+				}
+				
+				if(runningProcess!=null) {
+					//时间片没有用完
+					if(runningProcess.getTime_slice()>1) {
+						runningProcess.setTime_slice(runningProcess.getTime_slice()-1);
+					} else {
+						//时间片用完
+						cpuStateProtection();  //cpu现场保护
+						runningProcess.setTime_slice(2);  //恢复时间片的时长
+						if(ReadyQ.size()==0) {  //若就绪队列为空，则继续执行当前进程
+							continue;
+						}
+						runningProcess.getPcb().setPsw(READY_STATE);
+						addReadyQ(runningProcess);   //将当前进程加入就绪队列
+						runningProcess = null;
+					}
 				}
 			}
+			
+			
 			
 		}
 		

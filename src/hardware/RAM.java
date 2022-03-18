@@ -8,16 +8,16 @@ public class RAM {
 	//定义页框（物理块）大小常量
 	static final int PAGE_SIZE = 1024;
 	
-	//页表存放开始的块位置
-	public static final int PAGE_LIST_START_NO = 0;
-	//页表占用块数
-	public static final int PAGE_LIST_NUM = 1;
 	
 	//用户区存放开始的块位置
-	public static final int USER_AREA_START_NO = 1;
+	public static final int USER_AREA_START_NO = 0;
 	//用户区占用的块数
 	public static final int USER_AREA_NUM = 24;
 	
+	//缓冲区存放开始的块位置
+	public static final int BUFFER_AREA_START_NO = 24;
+	//缓冲区占用的块数
+	public static final int BUFFER_AREA_NUM = 8;
 	
 	//存放的数据单元
 	private static byte[] data_unit;

@@ -50,6 +50,68 @@ public class IOFile {  //作业文件信息读入
 			e.printStackTrace();
 		}
 	}
+	
+	public static void createRandomInstructionFile(Job j) {
+		File f = new File("test\\"+j.getJobsID()+".txt");
+		if(!f.exists()) {
+			try {
+				f.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			Random r = new Random();
+			FileOutputStream fos = new FileOutputStream(f);
+			int no,stat,addr=0,time,lastAddr=0;
+			for(int i=0;i<j.getInstrucNum();i++) {
+				no = i+1;
+				if(no == 1) {
+					if(r.nextDouble()>=0.5) {
+						stat = 2;
+					} else {
+						stat = 0;
+					}
+				} else {
+					stat = r.nextInt(7);
+				}
+				if(stat == 1 || stat == 2) {
+					time = 2;
+				} else if(stat == 3 || stat == 4) {
+					time = 3;
+				} else if(stat == 5 || stat == 6) {
+					time = 4;
+				} else {
+					time = 1;
+				}
+				if(stat == 1 || stat == 4 || stat == 5) {
+					addr = r.nextInt(11)+10;
+				} else {
+					if(no == 1) {
+						if(r.nextDouble()>=0.5) {
+							addr = 1;
+						} else {
+							addr = 0;
+						}
+						lastAddr = addr;
+					} else {
+						if(r.nextDouble()>=0.6) {
+							addr = lastAddr+2;
+						}
+						else {
+							addr = lastAddr;
+						}
+						lastAddr = addr;
+					}
+				}
+				String s = no+","+stat+","+addr+","+time+"\r\n";
+				fos.write(s.getBytes());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static void initWriteData() {  //初始化写文件
 		data = new StringBuffer("");
 	}

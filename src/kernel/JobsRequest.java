@@ -19,6 +19,7 @@ public class JobsRequest extends Thread {  //作业请求类
 	
 	private int sumJob;  //作业的总数,所有得到过的作业总数
 	
+	
 	public JobsRequest(OSManage om) {
 		this.om = om;
 		
@@ -46,6 +47,8 @@ public class JobsRequest extends Thread {  //作业请求类
 		return JobsQueue;
 	}
 	
+	
+	
 	/**
 	 * 将创建的Job加入队列，并根据Job进入时间进行排序
 	 */
@@ -57,43 +60,41 @@ public class JobsRequest extends Thread {  //作业请求类
 		this.sumJob++;
 	}
 	
-	/*public Job createANewJob(int instrucNum) {  //创建一个新作业
-		Job job = new Job(getSumJob()+1, clock.getTime(), instrucNum);
-		for(int i=0;i<instrucNum;i++) {
-			Instruction ins = new Instruction(i+1,new Random().nextInt(4));
-			job.addJobInstruction(ins);
-		}
-		return job;
-	}*/
+	/**
+	 * 创建一个新的随机作业并将其放入临时作业数组当中
+	 */
+	public synchronized void createANewJob() {  //创建一个新作业
+		Random rand = new Random();
+		Job job = new Job(getSumJob()+1,rand.nextInt(5)+1, clock.getTime(), rand.nextInt(30)+1);
+		//创建一个存放该作业指令的文件
+		IOFile.createRandomInstructionFile(job);
+		addJob(job);
+	}
 	
 	
 	
 	public void run() {
-		while(true) {
-			if(clock.getTime()%5==0 && clock.getTime()!=lastCheckTime) {
-				lastCheckTime = clock.getTime();
-				//检查作业是否到达，并进入作业后备队列
-				while(JobsQueue.size()>0 && clock.getTime()>=JobsQueue.get(0).getInTimes()) {  
-					//从临时数组读出作业
-					Job j = JobsQueue.remove(0);
-					//IOFile.writeMessageInData(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
-					//ProcessUI.addMessage(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
-					
-					//读取作业指令信息
-					IOFile.ReadJobInstructions(j);
-					//作业进入后备队列之后，
-					ProcessSchedule.getReverseQ().add(j);
-					System.out.println(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
+		while(!om.isShutdown()) {
+			if(!om.isPause()) {
+				if(clock.getTime()%5==0 && clock.getTime()!=lastCheckTime) {
+					lastCheckTime = clock.getTime();
+					//检查作业是否到达，并进入作业后备队列
+					while(JobsQueue.size()>0 && clock.getTime()>=JobsQueue.get(0).getInTimes()) {  
+						//从临时数组读出作业
+						Job j = JobsQueue.remove(0);
+						//IOFile.writeMessageInData(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
+						//ProcessUI.addMessage(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
+						
+						//读取作业指令信息
+						IOFile.ReadJobInstructions(j);
+						//作业进入后备队列之后，
+						ProcessSchedule.getReverseQ().add(j);
+						System.out.println(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
+					}
 				}
-			}
-			
-			//时钟经过一秒
-			clock.passOneSec();
-			
-			
-			
-			if(ProcessUI.isPause()) {  //暂停信号
-				return;
+				
+				//时钟经过一秒
+				clock.passOneSec();
 			}
 		}
 	}

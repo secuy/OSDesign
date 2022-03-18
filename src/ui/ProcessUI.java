@@ -3,12 +3,13 @@ package ui;
 import hardware.CPU;
 import hardware.Clock;
 import hardware.RAM;
+import hardware.ROM;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
@@ -33,6 +34,7 @@ public class ProcessUI extends JFrame implements Runnable {
 	static Clock clock = new Clock();
 	static JLabel[] queueLabels={new JLabel("就绪队列"),new JLabel("阻塞队列1"),new JLabel("阻塞队列2"),new JLabel("阻塞队列3"),new JLabel("阻塞队列4"),new JLabel("阻塞队列5"),new JLabel("作业后备队列"),new JLabel("完成队列") };
 	static JTextArea[] queueText;  //队列文本框
+	static JScrollPane[] queueScrollPane;  //队列滚动条
 	
 	static JScrollPane messageScrollPane;  //消息文本框滚动条
 	static JTextArea messageText;  //消息文本框
@@ -67,18 +69,23 @@ public class ProcessUI extends JFrame implements Runnable {
 	static JButton[] buttons = new JButton[5];
 	
 	static JPanel memPane;   //内存区域
-	static JLabel memLabel = new JLabel("内存块使用情况0-31");
+	static JLabel memLabel = new JLabel("内存块使用情况0-31，0-23是用户区，24-31是缓冲区");
 	static JLabel[] memBlock;  //内存块表示，"■" 表示已占用，"□"表示未占用
+	static JLabel[] memNo;    //内存块序号
 	
+	static JPanel romPane;   //外存区域
+	static JLabel romLabel = new JLabel("外存交换区使用情况");
+	static JScrollPane romScrollPane;  //外存滚动条
+	static JPanel labelPane;   //滚动条内部的放置label的panel
+	static JLabel[] romNumLabel;   //外存物理块序号
+	static JLabel[] romUsedLabel;  //外存物理块使用情况
 	
-	static boolean pause = false;  //暂停信号
 	
 	public ProcessUI() {
 		super("进程低级调度");
 		
 		om = new OSManage();
 		
-		queueText = new JTextArea[10];
 		initFrame();
 	}
 	public void initFrame() {
@@ -91,8 +98,12 @@ public class ProcessUI extends JFrame implements Runnable {
 		setCPUArea(700, 250);
 		setRunningArea(700, 500);
 		setMemArea(1300,250);
+		setRomArea(1300,500);
 		
-		setButtonArea(0, 780);
+		
+		setButtonArea(100, 780);
+		
+		this.setVisible(true);
 	}
 	public void setFrame() {
 		this.setLayout(null);
@@ -102,20 +113,24 @@ public class ProcessUI extends JFrame implements Runnable {
 	}
 	public void setQueueTextArea(int x,int y) {  //设置队列显示位置
 
+		queueText = new JTextArea[8];
+		queueScrollPane = new JScrollPane[8];
 		for(int i=0;i<8;i++) {
-			queueLabels[i].setBounds(x+ 20+i*100, y+20, 80, 20);
+			queueLabels[i].setBounds(x+ 20+i*120, y+20, 80, 20);
 			con.add(queueLabels[i]);
+			
 			queueText[i] = new JTextArea();
-			queueText[i].setBounds(x+ 20+i*100, y+50, 80, 200);
 			queueText[i].setEditable(false);
 			queueText[i].setFont(new Font("宋体", 0, 18));
-			con.add(queueText[i]);
+			
+			queueScrollPane[i] = new JScrollPane(queueText[i]);
+			queueScrollPane[i].setBounds(x+ 20+i*120, y+50, 80, 200);
+			con.add(queueScrollPane[i]);
 		}
+		
+		
 	}
 	
-	public static boolean isPause() {
-		return pause;
-	}
 	
 	
 	public static void addMessage(String s) {  //在消息框中加入消息
@@ -153,7 +168,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		pageItemPane.setBounds(x+20, y+100, 300, 200);
 		pageItemPane.setLayout(new BorderLayout());
 		
-        String[] pageTableHeader = new String[]{"逻辑页号", "内存框号", "外存块号","调入次数"};
+        String[] pageTableHeader = new String[]{"逻辑页号", "内存框号", "外存块号","调入次数","调入时间"};
         pageTableInfo = new DefaultTableModel(new String[][]{}, pageTableHeader) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -184,7 +199,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		TLBPane.setBounds(x+20, y+100, 300, 200);
 		TLBPane.setLayout(new BorderLayout());
 		
-        String[] TLBHeader = new String[]{"进程归属","逻辑页号", "内存框号","调入次数"};
+        String[] TLBHeader = new String[]{"进程归属","逻辑页号", "内存框号","调入次数","调入时间"};
         TLBTableInfo = new DefaultTableModel(new String[][]{}, TLBHeader) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -261,7 +276,7 @@ public class ProcessUI extends JFrame implements Runnable {
 	}
 	
 	public void setMemArea(int x,int y) {  //设置内存块使用情况区域
-		memLabel.setBounds(x+20, y+20, 200, 20);
+		memLabel.setBounds(x+20, y+20, 500, 20);
 		con.add(memLabel);
 		memPane = new JPanel();
 		memPane.setBounds(x+20, y+50, 500, 200);
@@ -271,16 +286,64 @@ public class ProcessUI extends JFrame implements Runnable {
 		
 		//内存块初始化
 		memBlock = new JLabel[RAM.PAGE_NUM];
+		memNo = new JLabel[RAM.PAGE_NUM];
 		for(int i=0;i<RAM.PAGE_NUM;i++) {
 			memBlock[i] = new JLabel();
+			memNo[i] = new JLabel();
+			
 			memBlock[i].setBounds(i%8*60+20,(i/8)*50,30,30);
+			memNo[i].setBounds(i%8*60+25,(i/8)*50+20,30,30);
+			memNo[i].setText(i+"");
+			
 			memBlock[i].setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 30));
 			memPane.add(memBlock[i]);
+			memPane.add(memNo[i]);
 		}
 		refreshMemArea();
 
-		
 	}
+	
+	//设置外存情况显示区域
+	public void setRomArea(int x,int y) {
+		romLabel.setBounds(x+20, y+20, 200, 20);
+		con.add(romLabel);
+		
+		romPane = new JPanel();
+		romPane.setBounds(x+20, y+50, 500, 200);
+		romPane.setLayout(null);
+		
+		labelPane = new JPanel();
+		labelPane.setLayout(null);
+		labelPane.setBounds(0, 0, 500, 1000);
+		labelPane.setBackground(Color.cyan);
+		labelPane.setPreferredSize(new Dimension(500,ROM.getChange_used().length*5));
+		
+		
+		romNumLabel = new JLabel[ROM.getChange_used().length];
+		for(int i=0;i<ROM.getChange_used().length;i+=8) {
+			romNumLabel[i] = new JLabel();
+			romNumLabel[i].setText(i+"-"+(i+7));
+			romNumLabel[i].setBounds(10,i*5+10,100,20);
+			labelPane.add(romNumLabel[i]);
+		}
+		romUsedLabel = new JLabel[ROM.getChange_used().length];
+		
+		for(int j=0;j<ROM.getChange_used().length;j++) {
+			romUsedLabel[j] = new JLabel();
+			romUsedLabel[j].setBounds(j%8*40+100,(j/8)*40,30,30);
+			romUsedLabel[j].setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 30));
+			labelPane.add(romUsedLabel[j]);
+		}
+		refreshRomArea();
+		
+		romScrollPane = new JScrollPane(labelPane,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		romScrollPane.setBounds(0, 0, 500, 200);
+		
+		
+		romPane.add(romScrollPane);
+		con.add(romPane);
+	}
+	
 	
 	public void setButtonArea(int x,int y) {  //设置按钮区域位置
 		buttonPane = new JPanel();
@@ -304,22 +367,18 @@ public class ProcessUI extends JFrame implements Runnable {
 		
 		//暂停按钮
 		buttons[1].addActionListener(new ActionListener() {
-			@SuppressWarnings("deprecation")
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				//ps.suspend();
-				//jr.suspend();
+				om.pauseSystem();
 			}
 			
 		});
 		
 		//继续按钮
 		buttons[2].addActionListener(new ActionListener() {
-			@SuppressWarnings("deprecation")
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				//ps.resume();
-				//jr.resume();
+				om.proceedSystem();
 			}
 		});
 		
@@ -327,7 +386,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		buttons[4].addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				pause = true;
+				om.shutdownSystem();
 				dispose();
 			}
 		});
@@ -336,7 +395,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		buttons[3].addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				//JobsRequest.addJob(JobsRequest.createANewJob(20));
+				om.getJobsRequest().createANewJob();
 			}
 		});
 		
@@ -420,6 +479,9 @@ public class ProcessUI extends JFrame implements Runnable {
 		
 		//刷新TLB
 		refreshTLBTable();
+		
+		//刷新外存
+		refreshRomArea();
 	}
 	
 	//刷新内存区域
@@ -484,21 +546,18 @@ public class ProcessUI extends JFrame implements Runnable {
 	public void refreshRunning() {
 		Process p = ProcessSchedule.getRunningProcess();
 		if(p==null) {
+			for(int i=0;i<runningStrs.length;i++) {
+				runningText[i].setText("无");
+			}
 			return;
 		}
 		synchronized(p) {
-			if(p!=null) {
-				runningText[0].setText(p.getPcb().getPro_ID()+"");
-				runningText[1].setText(p.getPcb().getPriority()+"");
-				runningText[2].setText(p.getPcb().getInstruc().getInstruc_ID()+"");
-				runningText[3].setText(p.getPcb().getInstrucNum()+"");
-				runningText[4].setText(p.getPcb().getInstruc().getInstruc_state()+"");
-				runningText[5].setText(p.getPcb().getPc()+"");
-			} else {
-				for(int i=0;i<runningStrs.length;i++) {
-					runningText[i].setText("无");
-				}
-			}
+			runningText[0].setText(p.getPcb().getPro_ID()+"");
+			runningText[1].setText(p.getPcb().getPriority()+"");
+			runningText[2].setText(p.getPcb().getInstruc().getInstruc_ID()+"");
+			runningText[3].setText(p.getPcb().getInstrucNum()+"");
+			runningText[4].setText(p.getPcb().getInstruc().getInstruc_state()+"");
+			runningText[5].setText(p.getPcb().getPc()+"");
 		}
 	}
 	
@@ -508,10 +567,11 @@ public class ProcessUI extends JFrame implements Runnable {
 		for(int i=0;i<ProcessSchedule.getPcbList().size();i++) {
 			for(int j=0;j<ProcessSchedule.getPcbList().get(i).getPage_items_num();j++) {
 				Vector<String> v = new Vector<String>();
-				v.add("进程"+ProcessSchedule.getPcbList().get(i).getPro_ID()+":"+ProcessSchedule.getPcbList().get(i).getPage_items()[j].getLogicPageNo());
+				v.add("p"+ProcessSchedule.getPcbList().get(i).getPro_ID()+":"+ProcessSchedule.getPcbList().get(i).getPage_items()[j].getLogicPageNo());
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_items()[j].getPageFrameNo()+"");
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_items()[j].getDiskBlockNo()+"");
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_items()[j].getInMemTimes()+"");
+				v.add(ProcessSchedule.getPcbList().get(i).getPage_items()[j].getLastInMemTime()+"");
 				pageTableInfo.addRow(v);
 			}
 			
@@ -527,9 +587,21 @@ public class ProcessUI extends JFrame implements Runnable {
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_frame_nums()[j].getLogic_no());
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_frame_nums()[j].getPage_frame_no());
 				v.add(ProcessSchedule.getPcbList().get(i).getPage_frame_nums()[j].getInMemTimes());
+				v.add(ProcessSchedule.getPcbList().get(i).getPage_frame_nums()[j].getLastInMemTime());
 				TLBTableInfo.addRow(v);
 			}
 			
+		}
+	}
+	
+	public synchronized void refreshRomArea() {
+		boolean[] arr = ROM.getChange_used();
+		for(int i=0;i<arr.length;i++) {
+			if(arr[i] == true) {
+				romUsedLabel[i].setText("■");
+			} else {
+				romUsedLabel[i].setText("□");
+			}
 		}
 	}
 	
@@ -537,10 +609,10 @@ public class ProcessUI extends JFrame implements Runnable {
 	@Override
 	public void run() {
 		
-		while(true) {
+		while(!om.isShutdown()) {
 			refresh();
 			try {
-				Thread.sleep(500);
+				Thread.sleep(20);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
