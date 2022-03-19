@@ -2,8 +2,6 @@ package hardware;
 
 import kernel.Instruction;
 import kernel.Process;
-import kernel.ProcessSchedule;
-import ui.ProcessUI;
 
 public class CPU {
 	
@@ -75,7 +73,7 @@ public class CPU {
 			ir.setFinished(true);  //该指令执行完毕
 		}
 		
-		System.out.println(now_time+":本次执行指令："+ir.toString());
+		//System.out.println(now_time+":本次执行指令："+ir.toString());
 		/*if(ir.getInstruc_state()==0) {  //0状态指令直接执行完毕，其他类型指令必须在中断结束后才算结束
 			ir.setFinished(true);  //该指令执行完毕
 		}*/

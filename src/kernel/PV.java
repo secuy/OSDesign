@@ -1,5 +1,8 @@
 package kernel;
 
+import other.OSManage;
+import ui.ProcessUI;
+
 /**
  * 
  * PV操作
@@ -33,13 +36,18 @@ public class PV {
 		value--;
 	}
 	
-	public void P() {
+	public synchronized void P() {
 		while(value<=0);
+		//信息输出
+		String s = ProcessUI.getClock().getTime()+":[P操作]";
+		OSManage.messageOutputSystem(s);
 		subValue();
 	}
 	
-	public void V() {
+	public synchronized void V() {
 		addValue();
+		String s = ProcessUI.getClock().getTime()+":[V操作]";
+		OSManage.messageOutputSystem(s);
 	}
 	
 }

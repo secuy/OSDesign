@@ -54,8 +54,7 @@ public class Job {
 	
 	@Override
 	public String toString() {
-		return "Job [jobsID=" + jobsID + ", priority=" + priority
-				+ ", inTimes=" + inTimes + ", instrucNum=" + instrucNum + "]";
+		return jobsID + "," + priority + "," + inTimes + "," + instrucNum;
 	}
 	
 	

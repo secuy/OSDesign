@@ -15,6 +15,8 @@ public class Process {
 	
 	private int bufferNo;   //在内存中的缓冲区块号
 	
+	private int lastInbuffer;   //上次进入缓冲区的时间
+	
 	public Process() {
 		pcb = null;
 		instructions = new ArrayList<Instruction>();
@@ -22,7 +24,7 @@ public class Process {
 		isLackPage = false;
 		finishLRUTag = false;
 		bufferNo = -1;
-		
+		lastInbuffer = -1;
 	}
 	public Process(PCB pcb,int time_slice) {
 		this.pcb = pcb;
@@ -31,6 +33,7 @@ public class Process {
 		isLackPage = false;
 		finishLRUTag = false;
 		bufferNo = -1;
+		lastInbuffer = -1;
 	}
 	public Process(Job j) {  //使用Job构造Process
 		PCB pcb = new PCB();   //PCB属性设置
@@ -45,6 +48,7 @@ public class Process {
 		this.time_slice = 2;
 		instructions = new ArrayList<Instruction>(j.getList());
 		bufferNo = -1;
+		lastInbuffer = -1;
 	}
 	public PCB getPcb() {
 		return pcb;
@@ -83,5 +87,13 @@ public class Process {
 	public void setBufferNo(int bufferNo) {
 		this.bufferNo = bufferNo;
 	}
+	public int getLastInbuffer() {
+		return lastInbuffer;
+	}
+	public void setLastInbuffer(int lastInbuffer) {
+		this.lastInbuffer = lastInbuffer;
+	}
+	
+	
 	
 }

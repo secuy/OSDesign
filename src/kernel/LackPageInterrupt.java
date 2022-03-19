@@ -13,7 +13,7 @@ public class LackPageInterrupt extends Thread {
 	
 	OSManage om;
 	
-	private static int times = 0;
+	//private static int times = 0;
 	
 	public LackPageInterrupt(OSManage om) {
 		clock = new Clock();
@@ -135,7 +135,7 @@ public class LackPageInterrupt extends Thread {
 				if(!p.isFinishLRUTag()) {
 					//要把逻辑地址和页框号统一起来
 					LRU(p);
-					System.out.println("从磁盘调入内存-----"+(++times));
+					//System.out.println("从磁盘调入内存-----"+(++times));
 					p.setFinishLRUTag(true);
 				}
 				//不再缺页

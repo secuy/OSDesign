@@ -1,5 +1,7 @@
 package kernel;
 
+import other.OSManage;
+import ui.ProcessUI;
 import hardware.RAM;
 
 /**
@@ -25,6 +27,8 @@ public class Producer {
 		mutex.P();   //进入临界区
 		//生产数据到内存缓冲区上
 		//System.out.println("生产一个数据到内存缓冲区上----");
+		String s = ProcessUI.getClock().getTime()+":[拷贝入缓冲区]";
+		OSManage.messageOutputSystem(s);
 		for(int i=RAM.BUFFER_AREA_START_NO;i<RAM.BUFFER_AREA_START_NO+RAM.BUFFER_AREA_NUM;i++) {
 			if(RAM.getAllBlocks()[i] == false) {
 				RAM.getAllBlocks()[i] = true;

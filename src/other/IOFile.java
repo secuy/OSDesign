@@ -7,7 +7,10 @@ import kernel.Instruction;
 import kernel.Job;
 
 public class IOFile {  //作业文件信息读入
-	public static StringBuffer data;  //所有输出信息
+	
+	private static int outPutFileTag=0;  //输出文件标志，将最终结果只输出一次
+	
+	public static StringBuffer data = new StringBuffer("");  //所有输出信息
 	public IOFile() {}
 	
 	public static List<Job> ReadJobsList() {   //读取作业列表文件到作业队列中
@@ -52,6 +55,15 @@ public class IOFile {  //作业文件信息读入
 	}
 	
 	public static void createRandomInstructionFile(Job j) {
+		//更改初始job列表
+		File jobList = new File("test\\19319229-jobs-input.txt");
+		try {
+			FileOutputStream fjob = new FileOutputStream(jobList,true);
+			fjob.write((j.toString()+"\r\n").getBytes());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
 		File f = new File("test\\"+j.getJobsID()+".txt");
 		if(!f.exists()) {
 			try {
@@ -112,20 +124,20 @@ public class IOFile {  //作业文件信息读入
 		}
 	}
 	
-	public static void initWriteData() {  //初始化写文件
-		data = new StringBuffer("");
-	}
 	public static void writeMessageInData(String str) {  //将字符串加入到data变量中
 		data.append((str+"\r\n"));
 	}
 	public static void outputMessageToFile(int time) {  //将运行信息输出到文件中，参数为所有进程运行完毕的时间
-		try {
-			File message = new File("test\\ProcessResults-"+ time +".txt");
-			FileOutputStream fos = new FileOutputStream(message);
-			fos.write(data.toString().getBytes());
-			fos.close();
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(outPutFileTag==0) {
+			try {
+				File message = new File("test\\ProcessResults-"+ time +".txt");
+				FileOutputStream fos = new FileOutputStream(message);
+				fos.write(data.toString().getBytes());
+				fos.close();
+				outPutFileTag = 1;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		} 
 	}
 }

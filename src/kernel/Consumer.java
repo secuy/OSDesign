@@ -1,5 +1,7 @@
 package kernel;
 
+import other.OSManage;
+import ui.ProcessUI;
 import hardware.RAM;
 
 /**
@@ -25,6 +27,8 @@ public class Consumer {
 		
 		//从内存缓冲区上取走数据
 		//System.out.println("从内存缓冲区取走数据----");
+		String s = ProcessUI.getClock().getTime()+":[拷贝出缓冲区]";
+		OSManage.messageOutputSystem(s);
 		RAM.getAllBlocks()[p.getBufferNo()] = false;
 		p.setBufferNo(-1);
 		

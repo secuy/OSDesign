@@ -82,12 +82,17 @@ public class ProcessUI extends JFrame implements Runnable {
 	
 	
 	public ProcessUI() {
-		super("进程低级调度");
+		super("Operating System");
 		
 		om = new OSManage();
 		
 		initFrame();
 	}
+	
+	public static Clock getClock() {
+		return clock;
+	}
+	
 	public void initFrame() {
 		con = this.getContentPane();
 		setFrame();
@@ -107,7 +112,7 @@ public class ProcessUI extends JFrame implements Runnable {
 	}
 	public void setFrame() {
 		this.setLayout(null);
-		this.setBounds(100, 100, 1850, 900);
+		this.setBounds(50, 50, 1850, 900);
 		this.setResizable(false);
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 	}
@@ -116,7 +121,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		queueText = new JTextArea[8];
 		queueScrollPane = new JScrollPane[8];
 		for(int i=0;i<8;i++) {
-			queueLabels[i].setBounds(x+ 20+i*120, y+20, 80, 20);
+			queueLabels[i].setBounds(x+ 20+i*140, y+20, 80, 20);
 			con.add(queueLabels[i]);
 			
 			queueText[i] = new JTextArea();
@@ -124,7 +129,7 @@ public class ProcessUI extends JFrame implements Runnable {
 			queueText[i].setFont(new Font("宋体", 0, 18));
 			
 			queueScrollPane[i] = new JScrollPane(queueText[i]);
-			queueScrollPane[i].setBounds(x+ 20+i*120, y+50, 80, 200);
+			queueScrollPane[i].setBounds(x+ 20+i*140, y+50, 120, 200);
 			con.add(queueScrollPane[i]);
 		}
 		
@@ -362,6 +367,7 @@ public class ProcessUI extends JFrame implements Runnable {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				om.runSystem();
+				om.proceedSystem();
 			}
 		});
 		
@@ -401,63 +407,131 @@ public class ProcessUI extends JFrame implements Runnable {
 		
 	}
 	public static void OutputMessage() {
-		if(CPU.getIr()==null) {
-			System.out.println(clock.getTime()+":[空闲]");  //输出控制台
-			IOFile.writeMessageInData(clock.getTime()+":[空闲]");  //输出字符串数据
-			addMessage(clock.getTime()+":[空闲]");  //输出到图形化界面
-			//setRunningProcessMessage();
-			
+		if(CPU.getIr()==null && ProcessSchedule.getRunningProcess()==null) {
+			String s = clock.getTime()+":[CPU空闲]";
+			OSManage.messageOutputSystem(s);
 		} else {
-			String s = clock.getTime()+":[运行进程"+ProcessSchedule.getRunningProcess().getPcb().getPro_ID()+"指令"+CPU.getIr().getInstruc_ID()+"类型"+CPU.getIr().getInstruc_state()+"]";
-			System.out.println(s);
-			IOFile.writeMessageInData(s);
-			addMessage(s);
-			//setRunningProcessMessage();
+			synchronized (ProcessSchedule.getRunningProcess()) {
+				String s = clock.getTime()+":[运行进程：进程编号："+ProcessSchedule.getRunningProcess().getPcb().getPro_ID()+
+				   						   "，指令段编号："+CPU.getIr().getInstruc_ID()+
+				   						   "，指令类型编号："+CPU.getIr().getInstruc_state()+
+				   						   "，指令类型说明："+Instruction.instrucText[CPU.getIr().getInstruc_state()]+
+				   						   "，逻辑地址："+CPU.getIr().getL_Address()+
+				   						   "，物理地址："+ProcessSchedule.getRunningProcess().getPcb().getPage_items()[CPU.getIr().getL_Address()].getPageFrameNo()+
+				   						   "，运行时长："+(clock.getTime()-ProcessSchedule.getRunningProcess().getPcb().getInTimes())+"]";
+				OSManage.messageOutputSystem(s);
+			}
 		}
-		StringBuffer ss = new StringBuffer(clock.getTime()+":[就绪队列1");
-		clearQueueMessage(0);
-		for(int i=0;i<ProcessSchedule.getReadyQ().size();i++) {
-			ss = ss.append(" 进程"+ProcessSchedule.getReadyQ().get(i).getPcb().getPro_ID());
-			addQueueMessage("进程"+ProcessSchedule.getReadyQ().get(i).getPcb().getPro_ID(), 0);
+		synchronized (ProcessSchedule.getReadyQ()) {
+			StringBuffer ss = new StringBuffer("FFFF"+":[就绪队列1：");
+			for(int i=0;i<ProcessSchedule.getReadyQ().size();i++) {
+				ss = ss.append(ProcessSchedule.getReadyQ().get(i).getPcb().getLastRqTime()+"=进程"+ProcessSchedule.getReadyQ().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getReadyQ().size()-1) {
+					ss.append("；");
+				}
+			}
+			ss = ss.append("]");
+			OSManage.messageOutputSystem(ss.toString());
 		}
-		ss = ss.append("]");
-		System.out.println(ss.toString());
-		IOFile.writeMessageInData(ss.toString());
-		addMessage(ss.toString());
+		synchronized (ProcessSchedule.getBlockQ1()) {
+			StringBuffer sq1 = new StringBuffer("FFFF"+":[阻塞队列1：");
+			for(int i=0;i<ProcessSchedule.getBlockQ1().size();i++) {
+				sq1.append(ProcessSchedule.getBlockQ1().get(i).getPcb().getLastBq1Time()+"/"+
+						(i==0?InterruptOperator.getKeyboard_time()+2:"--")+"=进程"+
+						ProcessSchedule.getBlockQ1().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getBlockQ1().size()-1) {
+					sq1.append("；");
+				}
+			}
+			sq1.append("]");
+			OSManage.messageOutputSystem(sq1.toString());
+		}
 		
-		StringBuffer sq1 = new StringBuffer(clock.getTime()+":[阻塞队列1");
-		clearQueueMessage(1);
-		for(int i=0;i<ProcessSchedule.getBlockQ1().size();i++) {
-			sq1.append(" 进程"+ProcessSchedule.getBlockQ1().get(i).getPcb().getPro_ID());
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ1().get(i).getPcb().getPro_ID(), 1);
+		synchronized (ProcessSchedule.getBlockQ2()) {
+			StringBuffer sq2 = new StringBuffer("FFFF"+":[阻塞队列2：");
+			for(int i=0;i<ProcessSchedule.getBlockQ2().size();i++) {
+				sq2.append(ProcessSchedule.getBlockQ2().get(i).getPcb().getLastBq2Time()+"/"+
+						(i==0?InterruptOperator.getScreen_time()+3:"--")+"=进程"+
+						ProcessSchedule.getBlockQ2().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getBlockQ2().size()-1) {
+					sq2.append("；");
+				}
+			}
+			sq2.append("]");
+			OSManage.messageOutputSystem(sq2.toString());
 		}
-		sq1.append("]");
-		System.out.println(sq1.toString());
-		IOFile.writeMessageInData(sq1.toString());
-		addMessage(sq1.toString());
 		
-		StringBuffer sq2 = new StringBuffer(clock.getTime()+":[阻塞队列2");
-		clearQueueMessage(2);
-		for(int i=0;i<ProcessSchedule.getBlockQ2().size();i++) {
-			sq2.append(" 进程"+ProcessSchedule.getBlockQ2().get(i).getPcb().getPro_ID());
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ2().get(i).getPcb().getPro_ID(), 2);
+		synchronized (ProcessSchedule.getBlockQ3()) {
+			StringBuffer sq3 = new StringBuffer("FFFF"+":[阻塞队列3：");
+			for(int i=0;i<ProcessSchedule.getBlockQ3().size();i++) {
+				sq3.append(ProcessSchedule.getBlockQ3().get(i).getPcb().getLastBq3Time()+"/"+
+						(i==0?InterruptOperator.getReadDisk_time()+3:"--")+"=进程"+
+						ProcessSchedule.getBlockQ3().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getBlockQ3().size()-1) {
+					sq3.append("；");
+				}
+			}
+			sq3.append("]");
+			OSManage.messageOutputSystem(sq3.toString());
 		}
-		sq2.append("]");
-		System.out.println(sq2.toString());
-		IOFile.writeMessageInData(sq2.toString());
-		addMessage(sq2.toString());
 		
-		StringBuffer sq3 = new StringBuffer(clock.getTime()+":[阻塞队列3");
-		clearQueueMessage(3);
-		for(int i=0;i<ProcessSchedule.getBlockQ3().size();i++) {
-			sq3.append(" 进程"+ProcessSchedule.getBlockQ3().get(i).getPcb().getPro_ID());
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ3().get(i).getPcb().getPro_ID(), 3);
+		synchronized (ProcessSchedule.getBlockQ4()) {
+			StringBuffer sq4 = new StringBuffer("FFFF"+":[阻塞队列4：");
+			for(int i=0;i<ProcessSchedule.getBlockQ4().size();i++) {
+				sq4.append(ProcessSchedule.getBlockQ4().get(i).getPcb().getLastBq4Time()+"/"+
+						(i==0?InterruptOperator.getWriteDisk_time()+4:"--")+"=进程"+
+						ProcessSchedule.getBlockQ4().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getBlockQ4().size()-1) {
+					sq4.append("；");
+				}
+			}
+			sq4.append("]");
+			OSManage.messageOutputSystem(sq4.toString());
 		}
-		sq3.append("]");
-		System.out.println(sq3.toString());
-		IOFile.writeMessageInData(sq3.toString());
-		addMessage(sq3.toString());
-		//setDeviceMessage();
+		
+		synchronized (ProcessSchedule.getBlockQ5()) {
+			StringBuffer sq5 = new StringBuffer("FFFF"+":[阻塞队列5：");
+			for(int i=0;i<ProcessSchedule.getBlockQ5().size();i++) {
+				sq5.append(ProcessSchedule.getBlockQ5().get(i).getPcb().getLastBq5Time()+"/"+
+						(i==0?InterruptOperator.getPrint_time()+4:"--")+"=进程"+
+						ProcessSchedule.getBlockQ5().get(i).getPcb().getPro_ID());
+				if(i!=ProcessSchedule.getBlockQ5().size()-1) {
+					sq5.append("；");
+				}
+			}
+			sq5.append("]");
+			OSManage.messageOutputSystem(sq5.toString());
+		}
+		
+		
+		synchronized(ProcessSchedule.getBlockQ3()) { 
+			synchronized(ProcessSchedule.getBlockQ4()) {
+				if(ProcessSchedule.getBlockQ3().size()==0 && ProcessSchedule.getBlockQ4().size()==0) {
+					String mes = ProcessUI.getClock().getTime()+":[缓冲区无进程]";
+					OSManage.messageOutputSystem(mes);
+				} else {
+					for(int i=0;i<RAM.BUFFER_AREA_NUM;i++) {
+						if(RAM.getAllBlocks()[RAM.BUFFER_AREA_START_NO+i]) {
+							for(int k=0;k<ProcessSchedule.getBlockQ3().size();k++) {
+								StringBuffer mes = new StringBuffer();
+								if(ProcessSchedule.getBlockQ3().get(k).getBufferNo()==RAM.BUFFER_AREA_START_NO+i) {
+									mes.append("MMMM:[缓冲区"+i+"："+ProcessSchedule.getBlockQ3().get(k).getLastInbuffer()+"="+ProcessSchedule.getBlockQ3().get(k).getPcb().getPro_ID()+"；]");
+									OSManage.messageOutputSystem(mes.toString());
+								}
+							}
+							for(int m=0;m<ProcessSchedule.getBlockQ4().size();m++) {
+								StringBuffer mes2 = new StringBuffer();
+								if(ProcessSchedule.getBlockQ4().get(m).getBufferNo()==RAM.BUFFER_AREA_START_NO+i) {
+									mes2.append("MMMM:[缓冲区"+i+"："+ProcessSchedule.getBlockQ4().get(m).getLastInbuffer()+"="+ProcessSchedule.getBlockQ4().get(m).getPcb().getPro_ID()+"；]");
+									OSManage.messageOutputSystem(mes2.toString());
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
 	}
 	
 	//刷新整个页面的状态信息
@@ -508,29 +582,54 @@ public class ProcessUI extends JFrame implements Runnable {
 		for(int i=0;i<8;i++) {
 			clearQueueMessage(i);
 		}
-		for(int k=0;k<ProcessSchedule.getReadyQ().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getReadyQ().get(k).getPcb().getPro_ID(),0);
+		synchronized (ProcessSchedule.getReadyQ()) {
+			for(int k=0;k<ProcessSchedule.getReadyQ().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getReadyQ().get(k).getPcb().getPro_ID()+
+								",优先级："+ProcessSchedule.getReadyQ().get(k).getPcb().getPriority()+
+								",指令数："+ProcessSchedule.getReadyQ().get(k).getPcb().getInstrucNum()+
+								",PC:"+ProcessSchedule.getReadyQ().get(k).getPcb().getPc(),0);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getBlockQ1().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ1().get(k).getPcb().getPro_ID(),1);
+		synchronized(ProcessSchedule.getBlockQ1()) {
+			for(int k=0;k<ProcessSchedule.getBlockQ1().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getBlockQ1().get(k).getPcb().getPro_ID(),1);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getBlockQ2().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ2().get(k).getPcb().getPro_ID(),2);
+		synchronized(ProcessSchedule.getBlockQ2()) {
+			for(int k=0;k<ProcessSchedule.getBlockQ2().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getBlockQ2().get(k).getPcb().getPro_ID(),2);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getBlockQ3().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ3().get(k).getPcb().getPro_ID(),3);
+		synchronized(ProcessSchedule.getBlockQ3()) {
+			for(int k=0;k<ProcessSchedule.getBlockQ3().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getBlockQ3().get(k).getPcb().getPro_ID(),3);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getBlockQ4().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ4().get(k).getPcb().getPro_ID(),4);
+		synchronized(ProcessSchedule.getBlockQ4()) {
+			for(int k=0;k<ProcessSchedule.getBlockQ4().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getBlockQ4().get(k).getPcb().getPro_ID(),4);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getBlockQ5().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getBlockQ5().get(k).getPcb().getPro_ID(),5);
+		synchronized(ProcessSchedule.getBlockQ5()) {
+			for(int k=0;k<ProcessSchedule.getBlockQ5().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getBlockQ5().get(k).getPcb().getPro_ID(),5);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getReverseQ().size();k++) {
-			addQueueMessage("作业"+ProcessSchedule.getReverseQ().get(k).getJobsID(),6);
+		synchronized (ProcessSchedule.getReverseQ()) {
+			for(int k=0;k<ProcessSchedule.getReverseQ().size();k++) {
+				addQueueMessage("作业"+ProcessSchedule.getReverseQ().get(k).getJobsID()+
+								",优先级："+ProcessSchedule.getReverseQ().get(k).getPriority()+
+								",请求时间："+ProcessSchedule.getReverseQ().get(k).getInTimes()+
+								",指令数量："+ProcessSchedule.getReverseQ().get(k).getInstrucNum(),6);
+			}
 		}
-		for(int k=0;k<ProcessSchedule.getFinishedQ().size();k++) {
-			addQueueMessage("进程"+ProcessSchedule.getFinishedQ().get(k).getPcb().getPro_ID(),7);
+		synchronized (ProcessSchedule.getFinishedQ()) {
+			for(int k=0;k<ProcessSchedule.getFinishedQ().size();k++) {
+				addQueueMessage("进程"+ProcessSchedule.getFinishedQ().get(k).getPcb().getPro_ID()+
+								",创建时间："+ProcessSchedule.getFinishedQ().get(k).getPcb().getInTimes()+
+								",结束时间："+ProcessSchedule.getFinishedQ().get(k).getPcb().getEndTimes()+
+								",周转时间："+ProcessSchedule.getFinishedQ().get(k).getPcb().getTurnTimes(),7);
+			}
 		}
 	}
 	//刷新CPU状态
@@ -610,11 +709,15 @@ public class ProcessUI extends JFrame implements Runnable {
 	public void run() {
 		
 		while(!om.isShutdown()) {
-			refresh();
-			try {
-				Thread.sleep(20);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			if(!om.isPause()) {
+				refresh();
+				OutputMessage();
+				
+				if(ProcessSchedule.getPcbList().size()==0 && ProcessSchedule.getFinishedQ().size()>0) {
+					IOFile.outputMessageToFile(clock.getTime());
+				}
+				
+				clock.passOneSec();
 			}
 		}
 		

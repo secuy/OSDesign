@@ -19,8 +19,8 @@ public class MMU {
 	private ROM rom;
 	
 	public MMU() {
-		ram = new RAM();
-		rom = new ROM();
+		setRam(new RAM());
+		setRom(new ROM());
 	}
 	
 	//为进程分配页框
@@ -35,7 +35,7 @@ public class MMU {
 				p.getPcb().getPage_frame_nums()[num].setPage_frame_no(i);
 				RAM.getAllBlocks()[i] = true;
 				num++;
-				System.out.println("分配页框："+i);
+				//System.out.println("分配页框："+i);
 			}
 		}
 	}
@@ -81,6 +81,22 @@ public class MMU {
 				p.getPcb().getPage_items()[i].setDiskBlockNo(-1);
 			}
 		}
+	}
+
+	public void setRam(RAM ram) {
+		this.ram = ram;
+	}
+
+	public RAM getRam() {
+		return ram;
+	}
+
+	public void setRom(ROM rom) {
+		this.rom = rom;
+	}
+
+	public ROM getRom() {
+		return rom;
 	}
 	
 }

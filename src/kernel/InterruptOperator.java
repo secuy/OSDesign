@@ -1,11 +1,13 @@
 package kernel;
 
+import other.OSManage;
+import ui.ProcessUI;
 import hardware.*;
 
 
 public class InterruptOperator {   //中断处理
 	
-	private static Instruction keyboard_interrupt = null;  //键盘中断指令，对应指令类型为2,阻塞队列4,为空说明暂无
+	private static Instruction keyboard_interrupt = null;  //键盘中断指令，对应指令类型为2,阻塞队列1,为空说明暂无
 	private static int keyboard_time = -1;  //进入键盘中断处理的时间（注意与进入阻塞队列时间不同）
 	
 	private static Instruction screen_interrupt = null;  //屏幕中断，对应指令类型为3,阻塞队列2
@@ -76,10 +78,24 @@ public class InterruptOperator {   //中断处理
 				readDisk_time = IOInterrupt.getClock().getTime();
 			}
 			//CPU.setIs_break_close(true);  //关中断
+			
+			
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
+			Process p = ProcessSchedule.getRunningProcess();
+			p.setLastInbuffer(ProcessUI.getClock().getTime());
+			String mes = ProcessUI.getClock().getTime()+":[入缓冲区：进程："+p.getPcb().getPro_ID()+
+														"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+														"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+														"，磁盘文件读操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+														" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+														" 缓冲区地址："+p.getBufferNo()+
+														" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+			OSManage.messageOutputSystem(mes);
+			
+			
 			
 			ProcessSchedule.setRunningProcess(null);  //执行进程设为空
-			//CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
+			CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
 			CPU.setIr(null);
 			CPU.setIs_busy(false);
 			return;
@@ -98,6 +114,17 @@ public class InterruptOperator {   //中断处理
 				screen_time = IOInterrupt.getClock().getTime();
 			}
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
+			
+			Process p = ProcessSchedule.getRunningProcess();
+			p.setLastInbuffer(ProcessUI.getClock().getTime());
+			String mes = ProcessUI.getClock().getTime()+":[入缓冲区：进程："+p.getPcb().getPro_ID()+
+														"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+														"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+														"，磁盘文件读操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+														" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+														" 缓冲区地址："+p.getBufferNo()+
+														" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(CPU.getIr().getInstruc_state()==4) {
 			if(readDisk_interrupt==null) {
@@ -106,6 +133,17 @@ public class InterruptOperator {   //中断处理
 			}
 			//CPU.setIs_break_close(true);  //关中断
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
+			
+			Process p = ProcessSchedule.getRunningProcess();
+			p.setLastInbuffer(ProcessUI.getClock().getTime());
+			String mes = ProcessUI.getClock().getTime()+":[入缓冲区：进程："+p.getPcb().getPro_ID()+
+														"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+														"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+														"，磁盘文件写操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+														" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+														" 缓冲区地址："+p.getBufferNo()+
+														" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(CPU.getIr().getInstruc_state()==5) {
 			if(writeDisk_interrupt==null) {
@@ -131,6 +169,7 @@ public class InterruptOperator {   //中断处理
 	}
 	public synchronized static void checkIOInterrupt() {  //检查输入输出中断是否完成，并且将后续阻塞队列进行中断处理
 		if(ProcessSchedule.getBlockQ1().size()>0) {
+			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 			int time = IOInterrupt.getClock().getTime();
 			if(time - keyboard_time>=2) {
 				keyboard_interrupt.setFinished(true);  //该指令执行完毕
@@ -140,6 +179,7 @@ public class InterruptOperator {   //中断处理
 				keyboard_time = -1;
 				//判断是否为最后一个指令
 				if(ProcessSchedule.getBlockQ1().get(0).getPcb().getPc()>ProcessSchedule.getBlockQ1().get(0).getPcb().getInstrucNum()) {
+					
 					Process p = ProcessSchedule.popBlockQ1();
 					ProcessSchedule.cancelProcess(p);
 				} else {
@@ -154,6 +194,7 @@ public class InterruptOperator {   //中断处理
 			}
 		}
 		if(ProcessSchedule.getBlockQ2().size()>0) {
+			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 			int time = IOInterrupt.getClock().getTime();
 			if(time - screen_time>=1) {
 				screen_interrupt.setFinished(true);  //该指令执行完毕
@@ -162,6 +203,7 @@ public class InterruptOperator {   //中断处理
 				screen_time = -1;
 				//判断是否为最后一个指令
 				if(ProcessSchedule.getBlockQ2().get(0).getPcb().getPc()>ProcessSchedule.getBlockQ2().get(0).getPcb().getInstrucNum()) {
+					
 					Process p = ProcessSchedule.popBlockQ2();
 					ProcessSchedule.cancelProcess(p);
 				} else {
@@ -178,6 +220,7 @@ public class InterruptOperator {   //中断处理
 		
 		
 		if(ProcessSchedule.getBlockQ5().size()>0) {
+			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 			int time = IOInterrupt.getClock().getTime();
 			if(time - print_time>=4) {
 				print_interrupt.setFinished(true);  //该指令执行完毕
@@ -186,6 +229,7 @@ public class InterruptOperator {   //中断处理
 				print_time = -1;
 				//判断是否为最后一个指令
 				if(ProcessSchedule.getBlockQ5().get(0).getPcb().getPc()>ProcessSchedule.getBlockQ5().get(0).getPcb().getInstrucNum()) {
+					
 					Process p = ProcessSchedule.popBlockQ5();
 					ProcessSchedule.cancelProcess(p);
 					CPU.setIs_break_close(false);  //取消关中断
@@ -208,12 +252,14 @@ public class InterruptOperator {   //中断处理
 				&& ProcessSchedule.getBlockQ3().size()==0
 				&& ProcessSchedule.getBlockQ4().size()==0
 				&& ProcessSchedule.getBlockQ5().size()==0) {
-			CPU.setPsw(1);  //无中断处理，则转换CPU为用户态
+			CPU.switchToUserState();  //无中断处理，则转换CPU为用户态
 		}
+		CPU.switchToUserState();    //中断处理完成转为用户态
 	}
 	
 	public synchronized static void checkDiskRWInterrupt() {  //检查磁盘文件读写中断是否完成，并且将后续阻塞队列进行中断处理
 		if(ProcessSchedule.getBlockQ3().size()>0) {
+			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 			int time = DiskRWInterrupt.getClock().getTime();
 			if(time-readDisk_time>=3) {
 				if(!ProcessSchedule.getBlockQ3().get(0).isLackPage()) {
@@ -229,7 +275,18 @@ public class InterruptOperator {   //中断处理
 				//判断是否为最后一个指令,并且该指令已经完成
 				if(ProcessSchedule.getBlockQ3().get(0).getPcb().getPc()>ProcessSchedule.getBlockQ3().get(0).getPcb().getInstrucNum()
 					&& ProcessSchedule.getBlockQ3().get(0).getPcb().getInstruc().isFinished()) {
+					
 					Process p = ProcessSchedule.popBlockQ3();
+					
+					String mes = ProcessUI.getClock().getTime()+":[出缓冲区：进程："+p.getPcb().getPro_ID()+
+																"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+																"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+																"，磁盘文件读操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+																" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+																" 缓冲区地址："+p.getBufferNo()+
+																" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+					OSManage.messageOutputSystem(mes);
+					
 					ProcessSchedule.cancelProcess(p);
 					CPU.setIs_break_close(false);  //取消关中断
 				} else {
@@ -247,6 +304,7 @@ public class InterruptOperator {   //中断处理
 		}
 		
 		if(ProcessSchedule.getBlockQ4().size()>0) {
+			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 			int time = DiskRWInterrupt.getClock().getTime();
 			if(time-writeDisk_time>=4) {
 				writeDisk_interrupt.setFinished(true);  //该指令执行完毕
@@ -255,7 +313,18 @@ public class InterruptOperator {   //中断处理
 				writeDisk_time = -1;
 				//判断是否为最后一个指令
 				if(ProcessSchedule.getBlockQ4().get(0).getPcb().getPc()>ProcessSchedule.getBlockQ4().get(0).getPcb().getInstrucNum()) {
+					
 					Process p = ProcessSchedule.popBlockQ4();
+					String mes = ProcessUI.getClock().getTime()+":[出缓冲区：进程："+p.getPcb().getPro_ID()+
+																"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+																"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+																"，磁盘文件写操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+																" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+																" 缓冲区地址："+p.getBufferNo()+
+																" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+					OSManage.messageOutputSystem(mes);
+					
+					
 					ProcessSchedule.cancelProcess(p);
 					CPU.setIs_break_close(false);  //取消关中断
 					
@@ -278,7 +347,8 @@ public class InterruptOperator {   //中断处理
 				&& ProcessSchedule.getBlockQ3().size()==0
 				&& ProcessSchedule.getBlockQ4().size()==0
 				&& ProcessSchedule.getBlockQ5().size()==0) {
-			CPU.setPsw(1);  //无中断处理，则转换CPU为用户态
+			CPU.switchToUserState();  //无中断处理，则转换CPU为用户态
 		}
+		CPU.switchToUserState();    //中断处理完成转为用户态
 	}
 }

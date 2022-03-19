@@ -16,7 +16,7 @@ public class Clock {  // ±÷”¿‡
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Time is " + time);
+		//System.out.println("Time is " + time);
 		//ProcessUI.getTimeText().setText(String.valueOf(time));
 	}
 }

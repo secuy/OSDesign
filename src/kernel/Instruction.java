@@ -9,7 +9,7 @@ public class Instruction {  //指令类
 	private int finishRunTimes;  //该条指令执行的时间
 	private boolean isFinished;   //是否执行完成
 	
-	
+	public static String[] instrucText = {"计算操作语句","计算操作函数","键盘输入变量语句","显示输出变量语句","文件读操作函数","文件写操作函数","打印操作语句"};
 	
 	public Instruction() {  //初始化，还未表示指令
 		instruc_ID = 0;

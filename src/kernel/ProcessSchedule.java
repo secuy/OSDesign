@@ -3,13 +3,12 @@ package kernel;
 import hardware.CPU;
 import hardware.Clock;
 import hardware.MMU;
-import hardware.RAM;
 
 import java.util.*;
 
 import other.OSManage;
-
 import ui.ProcessUI;
+
 
 
 
@@ -119,6 +118,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		p.getPcb().addRqTimes(clock.getTime());  //加入就绪队列时间
 		p.getPcb().setPsw(1);  //调整为就绪态
 		ReadyQ.add(p);
+
 	}
 	public synchronized static void addBlockQ1(Process p) {  //进程加入阻塞队列1
 		p.getPcb().setBqNum1(BlockQ1.size());
@@ -155,38 +155,48 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		for(int i=0;i<ReadyQ.size();i++) {  //更新队中编号信息
 			ReadyQ.get(i).getPcb().setRqNum(i);
 		}
+		
 		return p;
 	}
 	public synchronized static Process popBlockQ1() {  //阻塞队头出队
 		Process p = BlockQ1.remove(0);
+		p.getPcb().setBqNum1(ProcessUI.getClock().getTime());
 		for(int i=0;i<BlockQ1.size();i++) {  //更新队中编号信息
 			BlockQ1.get(i).getPcb().setBqNum1(i);
 		}
 		return p;
 	}
 	public synchronized static Process popBlockQ2() {  //阻塞队头出队
+		
 		Process p = BlockQ2.remove(0);
+		p.getPcb().setBqNum2(ProcessUI.getClock().getTime());
 		for(int i=0;i<BlockQ2.size();i++) {  //更新队中编号信息
 			BlockQ2.get(i).getPcb().setBqNum2(i);
 		}
 		return p;
 	}
 	public synchronized static Process popBlockQ3() {  //阻塞队头出队
+		
 		Process p = BlockQ3.remove(0);
+		p.getPcb().setBqNum3(ProcessUI.getClock().getTime());
 		for(int i=0;i<BlockQ3.size();i++) {  //更新队中编号信息
 			BlockQ3.get(i).getPcb().setBqNum3(i);
 		}
 		return p;
 	}
 	public synchronized static Process popBlockQ4() {  //阻塞队头出队
+		
 		Process p = BlockQ4.remove(0);
+		p.getPcb().setBqNum4(ProcessUI.getClock().getTime());
 		for(int i=0;i<BlockQ4.size();i++) {  //更新队中编号信息
 			BlockQ4.get(i).getPcb().setBqNum4(i);
 		}
 		return p;
 	}
 	public synchronized static Process popBlockQ5() {  //阻塞队头出队
+		
 		Process p = BlockQ5.remove(0);
+		p.getPcb().setBqNum5(ProcessUI.getClock().getTime());
 		for(int i=0;i<BlockQ5.size();i++) {  //更新队中编号信息
 			BlockQ5.get(i).getPcb().setBqNum5(i);
 		}
@@ -202,9 +212,6 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	}
 	//进程控制原语
 	public synchronized static Process createProcess(Job j) {  //根据作业创建进程原语放入就绪队列当中
-		System.out.println(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
-		//IOFile.writeMessageInData(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
-		//ProcessUI.addMessage(clock.getTime()+":[创建进程"+j.getJobsID()+"]");
 		
 		Process p = new Process(j);
 		
@@ -223,11 +230,11 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		Random r = new Random();
 		p.getPcb().setPriority(r.nextInt(5)+1);   //生成随机数作为进程中的优先级数
 		
+		//信息输出
+		OSManage.messageOutputSystem(clock.getTime()+":[创建进程：PCB内存块始地址："+p.getPcb().getPage_frame_nums()[0].getPage_frame_no()+"]");
 		
 		//将该进程放入到就绪队列当中
 		addReadyQ(p);
-		
-		//ProcessUI.addProcessMessage(clock.getTime()+"s进程"+p.getPcb().getPro_ID()+"进入，优先级为："+p.getPcb().getPriority()+"指令数量为："+p.getPcb().getInstrucNum());
 		return p;
 	}
 	public synchronized static void cancelProcess(Process p) {  //撤销完成的进程
@@ -253,16 +260,17 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		MMU.recycleDiskAddr(p);
 		
 		FinishedQ.add(p);
-		System.out.println(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
-		//IOFile.writeMessageInData(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
-		//ProcessUI.addMessage(clock.getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]");
-		//ProcessUI.addProcessMessage(clock.getTime()+"s进程"+p.getPcb().getPro_ID()+"执行完毕"+"，耗时："+p.getPcb().getTurnTimes());
+		
+		String mes = ProcessUI.getClock().getTime()+":[终止进程"+p.getPcb().getPro_ID()+"]";
+		OSManage.messageOutputSystem(mes);
 	}
 	public synchronized static void blockProcess(Process p) {  //阻塞进程
 		//如果缺页，调入阻塞队列3中
 		if(p.isLackPage()) {
 			addBlockQ3(p);
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
+			
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列3]";
+			OSManage.messageOutputSystem(mes);
 			
 			om.getBufferManager().getP().appendData(p);
 			
@@ -272,39 +280,37 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		//根据指令状态进入阻塞队列
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==2) {
 			addBlockQ1(p);
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列1]");
-			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列1]");
-			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列1]");
+
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列1]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==3) {
 			addBlockQ2(p);
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列2]");
-			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列2]");
-			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列2]");
+			
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列2]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==4) {
 			addBlockQ3(p);
 			
 			om.getBufferManager().getP().appendData(p);
 			
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
-			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
-			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列3]");
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列3]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==5) {
 			addBlockQ4(p);
 			
 			om.getBufferManager().getP().appendData(p);
 			
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
-			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
-			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列4]");
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列4]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(p.getPcb().getInterrupt_instruc().getInstruc_state()==6) {
 			addBlockQ5(p);
-			System.out.println(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列5]");
-			//IOFile.writeMessageInData(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列5]");
-			//ProcessUI.addMessage(clock.getTime()+":[阻塞进程"+p.getPcb().getPro_ID()+"进入队列5]");
+			
+			String mes = ProcessUI.getClock().getTime()+":[阻塞进程：进程编号："+p.getPcb().getPro_ID()+"，进入阻塞队列5]";
+			OSManage.messageOutputSystem(mes);
 		}
 		runningProcess.setTime_slice(0);  //使其时间片变清零
 		
@@ -312,57 +318,83 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	public synchronized static void awakeProcess(int BlockQNum,int now_time) {  //唤醒进程，参数为阻塞队列序号，唤醒阻塞队列队头进程
 		switch(BlockQNum) {
 			case 2:
+				
 				Process p1 = popBlockQ1();   //出阻塞队列，入就绪队列
 				p1.getPcb().setPsw(1);
 				p1.setTime_slice(2);
 				addReadyQ(p1);
-				System.out.println(now_time+":[唤醒进程"+p1.getPcb().getPro_ID()+"进入队列1]");
-				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p1.getPcb().getPro_ID()+"进入队列1]");
-				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p1.getPcb().getPro_ID()+"进入队列1]");
+				String mes1 = ProcessUI.getClock().getTime()+":[重新进入就绪队列：进程编号："+p1.getPcb().getPro_ID()+"]";
+				OSManage.messageOutputSystem(mes1);
+				
 				break;
 			case 3:
+				
 				Process p2 = popBlockQ2();   //出阻塞队列，入就绪队列
 				p2.getPcb().setPsw(1);
 				p2.setTime_slice(2);
 				addReadyQ(p2);
-				System.out.println(now_time+":[唤醒进程"+p2.getPcb().getPro_ID()+"进入队列1]");
-				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p2.getPcb().getPro_ID()+"进入队列1]");
-				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p2.getPcb().getPro_ID()+"进入队列1]");
+				
+				String mes2 = ProcessUI.getClock().getTime()+":[重新进入就绪队列：进程编号："+p2.getPcb().getPro_ID()+"]";
+				OSManage.messageOutputSystem(mes2);
+				
 				break;
 			case 4:
+				
 				Process p3 = popBlockQ3();
 				p3.getPcb().setPsw(1);
 				p3.setTime_slice(2);
 				addReadyQ(p3);
 				
+				String me1 = ProcessUI.getClock().getTime()+":[出缓冲区：进程："+p3.getPcb().getPro_ID()+
+															"，指令段："+p3.getPcb().getInstruc().getInstruc_ID()+
+															"，类型："+p3.getPcb().getInstruc().getInstruc_state()+
+															"，磁盘文件读操作函数：逻辑地址："+ p3.getPcb().getInstruc().getL_Address()+
+															" 物理地址："+p3.getPcb().getPage_items()[p3.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+															" 缓冲区地址："+p3.getBufferNo()+
+															" 外存物理块地址："+p3.getPcb().getPage_items()[p3.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+				OSManage.messageOutputSystem(me1);
+				
+				
 				om.getBufferManager().getC().takeData(p3);
 				
-				System.out.println(now_time+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
-				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
-				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p3.getPcb().getPro_ID()+"进入队列1]");
+				
+				String mes3 = ProcessUI.getClock().getTime()+":[重新进入就绪队列：进程编号："+p3.getPcb().getPro_ID()+"]";
+				OSManage.messageOutputSystem(mes3);
+				
 				break;
 			case 5:
+				
 				Process p4 = popBlockQ4();
 				p4.getPcb().setPsw(1);
 				p4.setTime_slice(2);
 				addReadyQ(p4);
 				
-				om.getBufferManager().getC().takeData(p4);
+				String me2 = ProcessUI.getClock().getTime()+":[出缓冲区：进程："+p4.getPcb().getPro_ID()+
+															"，指令段："+p4.getPcb().getInstruc().getInstruc_ID()+
+															"，类型："+p4.getPcb().getInstruc().getInstruc_state()+
+															"，磁盘文件写操作函数：逻辑地址："+ p4.getPcb().getInstruc().getL_Address()+
+															" 物理地址："+p4.getPcb().getPage_items()[p4.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+															" 缓冲区地址："+p4.getBufferNo()+
+															" 外存物理块地址："+p4.getPcb().getPage_items()[p4.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+				OSManage.messageOutputSystem(me2);
 				
-				System.out.println(now_time+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
-				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
-				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p4.getPcb().getPro_ID()+"进入队列1]");
+				String mes4 = ProcessUI.getClock().getTime()+":[重新进入就绪队列：进程编号："+p4.getPcb().getPro_ID()+"]";
+				OSManage.messageOutputSystem(mes4);
+				
+				om.getBufferManager().getC().takeData(p4);
 				break;
 			case 6:
+				
 				Process p5 = popBlockQ5();
 				p5.getPcb().setPsw(1);
 				p5.setTime_slice(2);
 				addReadyQ(p5);
-				System.out.println(now_time+":[唤醒进程"+p5.getPcb().getPro_ID()+"进入队列1]");
-				//IOFile.writeMessageInData(clock.getTime()+":[唤醒进程"+p5.getPcb().getPro_ID()+"进入队列1]");
-				//ProcessUI.addMessage(clock.getTime()+":[唤醒进程"+p5.getPcb().getPro_ID()+"进入队列1]");
+				
+				String mes5 = ProcessUI.getClock().getTime()+":[重新进入就绪队列：进程编号："+p5.getPcb().getPro_ID()+"]";
+				OSManage.messageOutputSystem(mes5);
 				break;
 		}
+		
 			
 	}
 	
@@ -454,6 +486,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 					
 					//CPU执行指令
 					CPU.excute(clock.getTime());
+					
 					
 					//检查是否需要中断
 					InterruptOperator.inInterrupt();

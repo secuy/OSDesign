@@ -20,15 +20,23 @@ public class PCB {
 	private List<Integer> RqTimes;   //进入就绪队列时间
 	private int BqNum1;   //阻塞队列1位置编号
 	private List<Integer> BqTimes1;  //进入阻塞队列1时间
+	private int lastLeaveBqTime1;  //上一次离开阻塞队列1的时间
+	
 	private int BqNum2;   //阻塞队列2位置编号
 	private List<Integer> BqTimes2;  //进入阻塞队列2时间
+	private int lastLeaveBqTime2;  //上一次离开阻塞队列2的时间
+	
 	private int BqNum3;   //阻塞队列3位置编号
 	private List<Integer> BqTimes3;  //进入阻塞队列3时间
+	private int lastLeaveBqTime3;  //上一次离开阻塞队列3的时间
+	
 	private int BqNum4;   //阻塞队列4位置编号
 	private List<Integer> BqTimes4;  //进入阻塞队列4时间
+	private int lastLeaveBqTime4;  //上一次离开阻塞队列4的时间
+	
 	private int BqNum5;   //阻塞队列3位置编号
 	private List<Integer> BqTimes5;  //进入阻塞队列5时间
-	
+	private int lastLeaveBqTime5;  //上一次离开阻塞队列5的时间
 	
 	/**
 	 * 该进程的所有页表项组成的页表，逻辑页号需要5位表示，那么页表项总共有2^5=32个
@@ -61,6 +69,12 @@ public class PCB {
 		BqTimes3 = new LinkedList<Integer>();
 		BqTimes4 = new LinkedList<Integer>();
 		BqTimes5 = new LinkedList<Integer>();
+		
+		lastLeaveBqTime1 = -1;
+		lastLeaveBqTime2 = -1;
+		lastLeaveBqTime3 = -1;
+		lastLeaveBqTime4 = -1;
+		lastLeaveBqTime5 = -1;
 		
 		//初始化页表
 		page_items_num = (int)Math.pow(2,PageItem.PAGE_BIT_NUM);
@@ -180,9 +194,14 @@ public class PCB {
 	public int getRqLength() {
 		return RqTimes.size();
 	}
+	public int getLastRqTime() {
+		return this.getRqTimes(getRqLength()-1);
+	}
+	
 	public int getBq1Length() {
 		return BqTimes1.size();
 	}
+	
 	public int getBq2Length() {
 		return BqTimes2.size();
 	}
@@ -195,6 +214,73 @@ public class PCB {
 	public int getBq5Length() {
 		return BqTimes5.size();
 	}
+	
+	public int getLastBq1Time() {
+		return this.getBqTimes1(getBq1Length()-1);
+	}
+	public int getLastBq2Time() {
+		return this.getBqTimes2(getBq2Length()-1);
+	}
+	public int getLastBq3Time() {
+		return this.getBqTimes3(getBq3Length()-1);
+	}
+	public int getLastBq4Time() {
+		return this.getBqTimes4(getBq4Length()-1);
+	}
+	public int getLastBq5Time() {
+		return this.getBqTimes5(getBq5Length()-1);
+	}
+	
+	public int getLastLeaveBqTime1() {
+		return lastLeaveBqTime1;
+	}
+
+
+	public void setLastLeaveBqTime1(int lastLeaveBqTime1) {
+		this.lastLeaveBqTime1 = lastLeaveBqTime1;
+	}
+
+
+	public int getLastLeaveBqTime2() {
+		return lastLeaveBqTime2;
+	}
+
+
+	public void setLastLeaveBqTime2(int lastLeaveBqTime2) {
+		this.lastLeaveBqTime2 = lastLeaveBqTime2;
+	}
+
+
+	public int getLastLeaveBqTime3() {
+		return lastLeaveBqTime3;
+	}
+
+
+	public void setLastLeaveBqTime3(int lastLeaveBqTime3) {
+		this.lastLeaveBqTime3 = lastLeaveBqTime3;
+	}
+
+
+	public int getLastLeaveBqTime4() {
+		return lastLeaveBqTime4;
+	}
+
+
+	public void setLastLeaveBqTime4(int lastLeaveBqTime4) {
+		this.lastLeaveBqTime4 = lastLeaveBqTime4;
+	}
+
+
+	public int getLastLeaveBqTime5() {
+		return lastLeaveBqTime5;
+	}
+
+
+	public void setLastLeaveBqTime5(int lastLeaveBqTime5) {
+		this.lastLeaveBqTime5 = lastLeaveBqTime5;
+	}
+
+
 	public int getRqNum() {
 		return RqNum;
 	}

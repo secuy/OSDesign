@@ -1,5 +1,6 @@
 package other;
 
+import ui.ProcessUI;
 import kernel.*;
 import hardware.*;
 
@@ -33,7 +34,7 @@ public class OSManage {
 		
 		bm = new BufferManager();
 		
-		pause = false;
+		pause = true;
 		shutdown = false;
 	}
 	
@@ -75,6 +76,15 @@ public class OSManage {
 	public void shutdownSystem() {
 		this.shutdown = true;
 	}
+	
+	//信息输出系统
+	public static void messageOutputSystem(String s) {
+		StringBuffer mes = new StringBuffer(s);
+		ProcessUI.addMessage(mes.toString());
+		IOFile.writeMessageInData(mes.toString());
+		System.out.println(mes.toString());
+	}
+	
 	
 	public void runSystem() {
 		jr.start();

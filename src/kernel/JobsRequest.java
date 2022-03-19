@@ -4,7 +4,6 @@ package kernel;
 import hardware.Clock;
 import java.util.*;
 import other.*;
-import ui.ProcessUI;
 
 
 public class JobsRequest extends Thread {  //作业请求类
@@ -58,6 +57,9 @@ public class JobsRequest extends Thread {  //作业请求类
 		for( ;i<JobsQueue.size() && j.getInTimes() >= JobsQueue.get(i).getInTimes();i++);
 		JobsQueue.add(i, j);
 		this.sumJob++;
+		
+		
+		
 	}
 	
 	/**
@@ -82,14 +84,15 @@ public class JobsRequest extends Thread {  //作业请求类
 					while(JobsQueue.size()>0 && clock.getTime()>=JobsQueue.get(0).getInTimes()) {  
 						//从临时数组读出作业
 						Job j = JobsQueue.remove(0);
-						//IOFile.writeMessageInData(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
-						//ProcessUI.addMessage(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
 						
 						//读取作业指令信息
 						IOFile.ReadJobInstructions(j);
 						//作业进入后备队列之后，
 						ProcessSchedule.getReverseQ().add(j);
-						System.out.println(clock.getTime()+":[新增作业"+j.getJobsID()+"]");
+
+						//信息输出
+						OSManage.messageOutputSystem(clock.getTime()+":[新增作业："+j.getJobsID()+"]");
+						
 					}
 				}
 				
