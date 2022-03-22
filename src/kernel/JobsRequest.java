@@ -87,7 +87,7 @@ public class JobsRequest extends Thread {  //作业请求类
 						
 						//读取作业指令信息
 						IOFile.ReadJobInstructions(j);
-						//作业进入后备队列之后，
+						//作业进入后备队列之后
 						ProcessSchedule.getReverseQ().add(j);
 
 						//信息输出

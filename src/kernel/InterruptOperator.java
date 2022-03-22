@@ -77,7 +77,7 @@ public class InterruptOperator {   //中断处理
 				readDisk_interrupt = CPU.getIr();
 				readDisk_time = IOInterrupt.getClock().getTime();
 			}
-			//CPU.setIs_break_close(true);  //关中断
+			CPU.setIs_break_close(true);  //关中断
 			
 			
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
@@ -98,6 +98,7 @@ public class InterruptOperator {   //中断处理
 			CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
 			CPU.setIr(null);
 			CPU.setIs_busy(false);
+			CPU.setIs_break_close(false);  //开中断
 			return;
 		}
 		
@@ -131,7 +132,7 @@ public class InterruptOperator {   //中断处理
 				readDisk_interrupt = CPU.getIr();
 				readDisk_time = IOInterrupt.getClock().getTime();
 			}
-			//CPU.setIs_break_close(true);  //关中断
+			CPU.setIs_break_close(true);  //关中断
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
 			
 			Process p = ProcessSchedule.getRunningProcess();
@@ -166,12 +167,14 @@ public class InterruptOperator {   //中断处理
 		//CPU.switchToUserState();   //中断阻塞完成CPU设置为用户态
 		CPU.setIr(null);
 		CPU.setIs_busy(false);
+		CPU.setIs_break_close(false);  //开中断
 	}
 	public synchronized static void checkIOInterrupt() {  //检查输入输出中断是否完成，并且将后续阻塞队列进行中断处理
 		if(ProcessSchedule.getBlockQ1().size()>0) {
-			CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
+			
 			int time = IOInterrupt.getClock().getTime();
 			if(time - keyboard_time>=2) {
+				CPU.switchToKernelState();  //相当于转向中断服务程序，CPU变为内核态
 				keyboard_interrupt.setFinished(true);  //该指令执行完毕
 				ProcessSchedule.getBlockQ1().get(0).getPcb().setInterrupt_instruc(null);  //将阻塞进程中的中断指令置空
 				//设置中断设备为空

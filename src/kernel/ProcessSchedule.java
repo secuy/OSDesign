@@ -43,7 +43,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	
 	//位于外存的后备队列
 	//使用Vector容器是线程安全的，不同线程对其操作不会出错。
-	private static Vector<Job> ReverseQ = new Vector<Job>();
+	private static Vector<Job> ReverseQ = new Vector<Job>();  //作业后备队列
 	
 	private static Vector<Process> ReadyQ = new Vector<Process>();   //就绪队列
 	
