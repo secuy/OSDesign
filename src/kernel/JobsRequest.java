@@ -74,7 +74,7 @@ public class JobsRequest extends Thread {  //作业请求类
 	}
 	
 	
-	
+	//作业请求
 	public void run() {
 		while(!om.isShutdown()) {
 			if(!om.isPause()) {

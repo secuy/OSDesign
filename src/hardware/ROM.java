@@ -106,6 +106,7 @@ public class ROM {
 							fos.write("FF".getBytes());
 							data_unit[i*j*1024 + k] = (byte) 0xFF;
 						}
+						fos.close();
 					} else {
 
 					}

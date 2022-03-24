@@ -186,10 +186,10 @@ public class PCB {
 		return BqTimes3.get(i);
 	}
 	public int getBqTimes4(int i) {
-		return BqTimes3.get(i);
+		return BqTimes4.get(i);
 	}
 	public int getBqTimes5(int i) {
-		return BqTimes3.get(i);
+		return BqTimes5.get(i);
 	}
 	public int getRqLength() {
 		return RqTimes.size();

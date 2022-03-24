@@ -15,7 +15,7 @@ public class IOFile {  //作业文件信息读入
 	
 	public static List<Job> ReadJobsList() {   //读取作业列表文件到作业队列中
 		try {
-			File f = new File("test\\19319229-jobs-input.txt");
+			File f = new File("input\\19319229-jobs-input.txt");
 			FileInputStream fis = new FileInputStream(f);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 			String str=null;
@@ -38,7 +38,7 @@ public class IOFile {  //作业文件信息读入
 	}
 	public static void ReadJobInstructions(Job job) {  //读取作业的指令
 		try {
-			File f = new File("test\\"+job.getJobsID()+".txt");
+			File f = new File("input\\"+job.getJobsID()+".txt");
 			FileInputStream fis = new FileInputStream(f);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 			String str=null;
@@ -56,7 +56,7 @@ public class IOFile {  //作业文件信息读入
 	
 	public static void createRandomInstructionFile(Job j) {
 		//更改初始job列表
-		File jobList = new File("test\\19319229-jobs-input.txt");
+		File jobList = new File("input\\19319229-jobs-input.txt");
 		try {
 			FileOutputStream fjob = new FileOutputStream(jobList,true);
 			fjob.write((j.toString()+"\r\n").getBytes());
@@ -64,7 +64,7 @@ public class IOFile {  //作业文件信息读入
 			e1.printStackTrace();
 		}
 		
-		File f = new File("test\\"+j.getJobsID()+".txt");
+		File f = new File("input\\"+j.getJobsID()+".txt");
 		if(!f.exists()) {
 			try {
 				f.createNewFile();
@@ -130,7 +130,7 @@ public class IOFile {  //作业文件信息读入
 	public static void outputMessageToFile(int time) {  //将运行信息输出到文件中，参数为所有进程运行完毕的时间
 		if(outPutFileTag==0) {
 			try {
-				File message = new File("test\\ProcessResults-"+ time +".txt");
+				File message = new File("output\\ProcessResults-"+ time +".txt");
 				FileOutputStream fos = new FileOutputStream(message);
 				fos.write(data.toString().getBytes());
 				fos.close();

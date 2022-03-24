@@ -14,9 +14,9 @@ public class OSManage {
 	private DiskRWInterrupt dri;
 	private LackPageInterrupt lpi;
 	
-	private boolean pause;  //系统暂停信号
+	private volatile boolean pause;  //系统暂停信号
 	
-	private boolean shutdown;  //系统终止信号
+	private volatile boolean shutdown;  //系统终止信号
 	
 	private MMU mmu;
 	

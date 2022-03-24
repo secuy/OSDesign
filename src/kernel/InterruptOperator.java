@@ -116,16 +116,7 @@ public class InterruptOperator {   //中断处理
 			}
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
 			
-			Process p = ProcessSchedule.getRunningProcess();
-			p.setLastInbuffer(ProcessUI.getClock().getTime());
-			String mes = ProcessUI.getClock().getTime()+":[入缓冲区：进程："+p.getPcb().getPro_ID()+
-														"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
-														"，类型："+p.getPcb().getInstruc().getInstruc_state()+
-														"，磁盘文件读操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
-														" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
-														" 缓冲区地址："+p.getBufferNo()+
-														" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
-			OSManage.messageOutputSystem(mes);
+			
 		}
 		if(CPU.getIr().getInstruc_state()==4) {
 			if(readDisk_interrupt==null) {
@@ -153,6 +144,17 @@ public class InterruptOperator {   //中断处理
 			}
 			//CPU.setIs_break_close(true);  //关中断
 			ProcessSchedule.blockProcess(ProcessSchedule.getRunningProcess());
+			
+			Process p = ProcessSchedule.getRunningProcess();
+			p.setLastInbuffer(ProcessUI.getClock().getTime());
+			String mes = ProcessUI.getClock().getTime()+":[入缓冲区：进程："+p.getPcb().getPro_ID()+
+														"，指令段："+p.getPcb().getInstruc().getInstruc_ID()+
+														"，类型："+p.getPcb().getInstruc().getInstruc_state()+
+														"，磁盘文件读操作函数：逻辑地址："+ p.getPcb().getInstruc().getL_Address()+
+														" 物理地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getPageFrameNo()+
+														" 缓冲区地址："+p.getBufferNo()+
+														" 外存物理块地址："+p.getPcb().getPage_items()[p.getPcb().getInstruc().getL_Address()].getDiskBlockNo()+"]";
+			OSManage.messageOutputSystem(mes);
 		}
 		if(CPU.getIr().getInstruc_state()==6) {
 			if(print_interrupt==null) {

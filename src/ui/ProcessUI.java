@@ -53,7 +53,7 @@ public class ProcessUI extends JFrame implements Runnable {
 	static JScrollPane TLBScrollPane;  //快表信息文本框滚动条
 	
 	static JPanel CPUPane;  //CPU状态区域
-	static JLabel CPULabel = new JLabel("CPU状态信息");
+	static JLabel CPULabel = new JLabel("CPU状态信息                                                                                        缺页中断会加入阻塞队列3进行读取磁盘");
 	static String[] CPUstrs = {"运行时间：","CPU状态："};
 	static JLabel[] CPUlabels = new JLabel[2];
 	static JTextField[] CPUtexts = new JTextField[2];
@@ -121,7 +121,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		queueText = new JTextArea[8];
 		queueScrollPane = new JScrollPane[8];
 		for(int i=0;i<8;i++) {
-			queueLabels[i].setBounds(x+ 20+i*140, y+20, 80, 20);
+			queueLabels[i].setBounds(x+ 20+i*140, y+20, 200, 20);
 			con.add(queueLabels[i]);
 			
 			queueText[i] = new JTextArea();
@@ -230,7 +230,7 @@ public class ProcessUI extends JFrame implements Runnable {
         con.add(TLBPane);
 	}
 	public void setCPUArea(int x,int y) {  //设置CPU状态信息的位置
-		CPULabel.setBounds(x+20, y+20, 100, 20);  //设置画布
+		CPULabel.setBounds(x+20, y+20, 600, 20);  //设置画布
 		con.add(CPULabel);
 		CPUPane = new JPanel();
 		CPUPane.setBackground(Color.ORANGE);
@@ -368,6 +368,7 @@ public class ProcessUI extends JFrame implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				om.runSystem();
 				om.proceedSystem();
+				buttons[0].setEnabled(false);
 			}
 		});
 		
@@ -407,7 +408,7 @@ public class ProcessUI extends JFrame implements Runnable {
 		
 	}
 	public static void OutputMessage() {
-		if(CPU.getIr()==null && ProcessSchedule.getRunningProcess()==null) {
+		if(ProcessSchedule.getRunningProcess()==null) {
 			String s = clock.getTime()+":[CPU空闲]";
 			OSManage.messageOutputSystem(s);
 		} else {
@@ -422,6 +423,7 @@ public class ProcessUI extends JFrame implements Runnable {
 				OSManage.messageOutputSystem(s);
 			}
 		}
+		
 		synchronized (ProcessSchedule.getReadyQ()) {
 			StringBuffer ss = new StringBuffer("FFFF"+":[就绪队列1：");
 			for(int i=0;i<ProcessSchedule.getReadyQ().size();i++) {
