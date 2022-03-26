@@ -27,10 +27,10 @@ public class PageItem {
 	//是否调入内存标志
 	private boolean isInMemory;
 	
-	//被调入内存的次数(用来实现LRU算法，最近最少使用算法)
+	//被调入内存的次数(用来实现LFU算法，最不经常使用算法)
 	private int inMemTimes;
 
-	//上次被调入内存的时间
+	//上次被调入内存的时间(用来实现LRU算法，最近最少使用算法)
 	private int lastInMemTime;
 	
 	

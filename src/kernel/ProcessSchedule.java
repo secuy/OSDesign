@@ -19,7 +19,7 @@ public class ProcessSchedule extends Thread{  //进程调度类
 	
 	
 	private static Clock clock;   	//时钟
-	private static Process runningProcess = null;    //正在执行的进程
+	private volatile static Process runningProcess = null;    //正在执行的进程
 	
 	//设置常量，最高用户进程并发度为8
 	public static final int MAX_PROCESS_NUM = 8;
@@ -63,10 +63,10 @@ public class ProcessSchedule extends Thread{  //进程调度类
 		om = o;
 	}
 	
-	public static Process getRunningProcess() {
+	public synchronized static Process getRunningProcess() {
 		return runningProcess;
 	}
-	public static void setRunningProcess(Process runningProcess) {
+	public synchronized static void setRunningProcess(Process runningProcess) {
 		ProcessSchedule.runningProcess = runningProcess;
 	}
 	public static void addPcb(PCB pcb) {
